@@ -71,7 +71,7 @@ def createSparkSession():
     try:
         spark = SparkSession \
             .builder \
-            .appName("BANK TRANSACTIONS LOAD") \
+            .appName("TELCO LOAD") \
             .getOrCreate()
     except Exception as e:
         print("LAUNCHING SPARK SESSION UNSUCCESSFUL")
@@ -82,90 +82,145 @@ def createSparkSession():
     return spark
 
 
-def createTransactionData(spark):
+def createInvoicingData(spark):
     """
-    Method to create a Banking Transactions dataframe using the dbldatagen and Faker frameworks
+    Method to create Invoicing dataframe using the dbldatagen and Faker frameworks
     """
 
     try:
-        print("CREATING BANKING TRANSACTIONS DF...\n")
-        dg = BankDataGen(spark)
-        transactionsDf = dg.transactionsDataGen()
+        print("CREATING DF...\n")
+        dg = TelcoDataGen(spark)
+        invoiceDf = dg.invoicingDataGen()
     except Exception as e:
-        print("CREATING TRANSACTION DATA UNSUCCESSFUL")
+        print("CREATING DATA UNSUCCESSFUL")
         print('\n')
         print(f'caught {type(e)}: e')
         print(e)
 
-    return transactionsDf
+    return invoiceDf
 
 
-def createTransactionBatch(spark):
+def createNavigationData(spark):
     """
-    Method to create a Banking Transactions dataframe using the dbldatagen and Faker frameworks
+    Method to create Navigation dataframe using the dbldatagen and Faker frameworks
     """
 
     try:
-        print("CREATING BANKING TRANSACTIONS 1 DF BATCH...\n")
-        dg = BankDataGen(spark)
-        transactionsBatchDf = dg.transactionsBatchDataGen()
+        print("CREATING DF...\n")
+        dg = TelcoDataGen(spark)
+        navigationDf = dg.transactionsBatchDataGen()
     except Exception as e:
-        print("CREATING TRANSACTION DATA 1 UNSUCCESSFUL")
+        print("CREATING DATA UNSUCCESSFUL")
         print('\n')
         print(f'caught {type(e)}: e')
         print(e)
 
-    return transactionsBatchDf
+    return navigationDf
 
-def createSecondTransactionBatch(spark):
+
+def createAtendimentoData(spark):
     """
-    Method to create a Banking Transactions dataframe using the dbldatagen and Faker frameworks
+    Method to create Atendimento dataframe using the dbldatagen and Faker frameworks
     """
 
     try:
-        print("CREATING BANKING TRANSACTIONS 2 BATCH DF...\n")
-        dg = BankDataGen(spark)
-        secondTransactionsBatchDf = dg.secondTransactionsBatchDataGen()
+        print("CREATING TRANSACTIONS DF...\n")
+        dg = TelcoDataGen(spark)
+        atendimentoDf = dg.atendimentoDataGen()
     except Exception as e:
-        print("CREATING TRANSACTION DATA 2 UNSUCCESSFUL")
+        print("CREATING DATA UNSUCCESSFUL")
         print('\n')
         print(f'caught {type(e)}: e')
         print(e)
 
-    return secondTransactionsBatchDf
+    return atendimentoDf
 
 
-def createPiiData(spark):
+def createAntennaData(spark):
     """
-    Method to create a Banking Pii dataframe using the dbldatagen and Faker frameworks
+    Method to create Atendimento dataframe using the dbldatagen and Faker frameworks
     """
 
     try:
-        print("CREATING BANKING PII DF...\n")
-        dg = BankDataGen(spark)
-        piiDf = dg.piiDataGen()
+        print("CREATING DF...\n")
+        dg = TelcoDataGen(spark)
+        antennaDf = dg.antennaDataGen()
     except Exception as e:
-        print("CREATING PII DATA UNSUCCESSFUL")
+        print("CREATING DATA UNSUCCESSFUL")
         print('\n')
         print(f'caught {type(e)}: e')
         print(e)
 
-    return piiDf
+    return antennaDf
 
 
-def saveTransactionData(bankTransactionsDf, storageLocation, username):
+def createProductSubscriptionData(spark):
     """
-    Method to save banking transactions to Cloud Storage in Json format
+    Method to create ProductSubscription dataframe using the dbldatagen and Faker frameworks
     """
-
-    print("SAVING BANKING TRANSACTIONS TO JSON IN CLOUD STORAGE...\n")
 
     try:
-        bankTransactionsDf. \
+        print("CREATING DF...\n")
+        dg = TelcoDataGen(spark)
+        productSubscriptionDf = dg.productSubscriptionDataGen()
+    except Exception as e:
+        print("CREATING DATA UNSUCCESSFUL")
+        print('\n')
+        print(f'caught {type(e)}: e')
+        print(e)
+
+    return productSubscriptionDf
+
+
+def createInterestData(spark):
+    """
+    Method to create interest dataframe using the dbldatagen and Faker frameworks
+    """
+
+    try:
+        print("CREATING DF...\n")
+        dg = TelcoDataGen(spark)
+        interestDf = dg.interestDataGen()
+    except Exception as e:
+        print("CREATING DATA UNSUCCESSFUL")
+        print('\n')
+        print(f'caught {type(e)}: e')
+        print(e)
+
+    return interestDf
+
+
+def createSvaSubscriptionData(spark):
+    """
+    Method to create svaSubscription dataframe using the dbldatagen and Faker frameworks
+    """
+
+    try:
+        print("CREATING DF...\n")
+        dg = TelcoDataGen(spark)
+        svaSubDf = dg.svaSubscriptionDataGen()
+    except Exception as e:
+        print("CREATING DATA UNSUCCESSFUL")
+        print('\n')
+        print(f'caught {type(e)}: e')
+        print(e)
+
+    return svaSubDf
+
+
+def saveInvoiceData(invoiceDf, storageLocation, username):
+    """
+    Method to save Invoice data to Cloud Storage in parquet format
+    """
+
+    print("SAVING INVOICE TO PARQUET IN CLOUD STORAGE...\n")
+
+    try:
+        invoiceDf. \
             write. \
-            format("json"). \
+            format("parquet"). \
             mode("overwrite"). \
-            save("{0}/mkthol/trans/{1}/rawtransactions".format(storageLocation, username))
+            save("{0}/telco/demo/{1}/invoice".format(storageLocation, username))
     except Exception as e:
         print("SAVING SYNTHETIC TRANSACTION DATA UNSUCCESSFUL")
         print('\n')
@@ -173,61 +228,121 @@ def saveTransactionData(bankTransactionsDf, storageLocation, username):
         print(e)
 
 
-def saveTransactionBatch(transactionsBatchDf, storageLocation, username):
+def saveNavigationData(navigationDf, storageLocation, username):
     """
-    Method to save banking transactions to Cloud Storage in Json format
+    Method to save Navigation to Cloud Storage in Parquet format
     """
 
-    print("SAVING TRANSACTIONS BATCH 1 TO JSON IN CLOUD STORAGE...\n")
+    print("SAVING NAVIGATION DATA TO PARQUET IN CLOUD STORAGE...\n")
 
     try:
-        transactionsBatchDf. \
+        navigationDf. \
             write. \
-            format("json"). \
+            format("parquet"). \
             mode("overwrite"). \
-            save("{0}/mkthol/trans/{1}/trx_batch_1".format(storageLocation, username))
+            save("{0}/telco/demo/{1}/navigation".format(storageLocation, username))
     except Exception as e:
-        print("SAVING TRANSACTION BATCH 1 UNSUCCESSFUL")
+        print("SAVING NAVIGATION DATA UNSUCCESSFUL")
         print('\n')
         print(f'caught {type(e)}: e')
         print(e)
 
 
-def saveSecondTransactionBatch(secondTransactionsBatchDf, storageLocation, username):
+def saveAtendimentoData(atendimentoDf, storageLocation, username):
     """
-    Method to save banking transactions to Cloud Storage in Json format
+    Method to save Atendimento Data to Cloud Storage in Json format
     """
 
-    print("SAVING TRANSACTIONS BATCH 2 TO JSON IN CLOUD STORAGE...\n")
+    print("SAVING ATENDIMENTO TO PARQUET IN CLOUD STORAGE...\n")
 
     try:
-        secondTransactionsBatchDf. \
+        atendimentoDf. \
             write. \
-            format("json"). \
+            format("parquet"). \
             mode("overwrite"). \
-            save("{0}/mkthol/trans/{1}/trx_batch_2".format(storageLocation, username))
+            save("{0}/telco/demo/{1}/atendimento".format(storageLocation, username))
     except Exception as e:
-        print("SAVING TRANSACTION BATCH 2 UNSUCCESSFUL")
+        print("SAVING ATENDIMENTO UNSUCCESSFUL")
         print('\n')
         print(f'caught {type(e)}: e')
         print(e)
 
 
-def savePiiData(piiDf, storageLocation, username):
+def saveAntennaData(antennaDf, storageLocation, username):
     """
-    Method to save banking transactions to Cloud Storage in csv format
+    Method to save Antenna Data to Cloud Storage in csv format
     """
 
-    print("SAVING PII DF TO CSV IN CLOUD STORAGE...\n")
+    print("SAVING ANTENNA DF TO CSV IN CLOUD STORAGE...\n")
 
     try:
-        piiDf \
+        antennaDf \
             .write. \
             mode('overwrite') \
-            .options(header='True', delimiter=',') \
-            .csv("{0}/mkthol/pii/{1}/pii".format(storageLocation, username))
+            .options(header='True') \
+            .parquet("{0}/telco/demo/{1}/antenna".format(storageLocation, username))
     except Exception as e:
-        print("SAVING SYNTHETIC TRANSACTION DATA UNSUCCESSFUL")
+        print("SAVING ANTENNA DATA UNSUCCESSFUL")
+        print('\n')
+        print(f'caught {type(e)}: e')
+        print(e)
+
+
+def saveProductSubscriptionData(productSubscriptionDf, storageLocation, username):
+    """
+    Method to save Product Subscription Data to Cloud Storage in csv format
+    """
+
+    print("SAVING ANTENNA DF TO CSV IN CLOUD STORAGE...\n")
+
+    try:
+        productSubscriptionDf \
+            .write. \
+            mode('overwrite') \
+            .options(header='True') \
+            .parquet("{0}/telco/demo/{1}/productsubscription".format(storageLocation, username))
+    except Exception as e:
+        print("SAVING PRODUCT SUBSCRIPTION DATA UNSUCCESSFUL")
+        print('\n')
+        print(f'caught {type(e)}: e')
+        print(e)
+
+
+def saveInterestData(interestDf, storageLocation, username):
+    """
+    Method to save Antenna Data to Cloud Storage in csv format
+    """
+
+    print("SAVING ANTENNA DF TO CSV IN CLOUD STORAGE...\n")
+
+    try:
+        interestDf \
+            .write. \
+            mode('overwrite') \
+            .options(header='True') \
+            .parquet("{0}/telco/demo/{1}/interest".format(storageLocation, username))
+    except Exception as e:
+        print("SAVING INTEREST DATA UNSUCCESSFUL")
+        print('\n')
+        print(f'caught {type(e)}: e')
+        print(e)
+
+
+def saveSvaSubData(svaSubDf, storageLocation, username):
+    """
+    Method to save SVA SUB Data to Cloud Storage in csv format
+    """
+
+    print("SAVING SVA SUB DF TO PARQUET IN CLOUD STORAGE...\n")
+
+    try:
+        svaSubDf \
+            .write. \
+            mode('overwrite') \
+            .options(header='True') \
+            .parquet("{0}/telco/demo/{1}/svasub".format(storageLocation, username))
+    except Exception as e:
+        print("SAVING SVA SUB DATA UNSUCCESSFUL")
         print('\n')
         print(f'caught {type(e)}: e')
         print(e)
@@ -249,18 +364,26 @@ def main():
 
         print("PROCESSING USER {}...\n".format(username))
 
-        bankTransactionsDf = createTransactionData(spark)
-        saveTransactionData(bankTransactionsDf, storageLocation, username)
+        invoiceDf = createInvoicingData(spark)
+        saveInvoicingData(invoiceDf, storageLocation, username)
 
-        piiDf = createPiiData(spark)
-        savePiiData(piiDf, storageLocation, username)
+        navigationDf = createNavigationData(spark)
+        saveNavigationData(navigationDf, storageLocation, username)
 
-        transactionsBatchDf = createTransactionBatch(spark)
-        saveTransactionBatch(transactionsBatchDf, storageLocation, username)
+        atendimentoDf = createAtendimentoData(spark)
+        saveAtendimentoData(atendimentoDf, storageLocation, username)
 
-        secondTransactionsBatchDf = createSecondTransactionBatch(spark)
-        saveSecondTransactionBatch(secondTransactionsBatchDf, storageLocation, username)
+        antennaDf = createAntennaData(spark)
+        saveAntennaData(antennaDf, storageLocation, username)
 
+        productSubscriptionDf = createProductSubscriptionData(spark)
+        saveProductSubscriptionData(productSubscriptionDf, storageLocation, username)
+
+        interestDf = createInterestData(spark)
+        saveInterestData(interestDf, storageLocation, username)
+
+        svaSubDf = createSvaSubscriptionData(spark)
+        saveSvaSubData(svaSubDf, storageLocation, username)
 
 if __name__ == "__main__":
     main()
