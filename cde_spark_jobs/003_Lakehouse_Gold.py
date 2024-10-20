@@ -45,76 +45,35 @@ from utils import *
 
 spark = SparkSession \
     .builder \
-    .appName("BANK TRANSACTIONS GOLD LAYER") \
+    .appName("TELCO GOLD LAYER") \
     .getOrCreate()
 
-config = configparser.ConfigParser()
-config.read('/app/mount/parameters.conf')
-storageLocation=config.get("general","data_lake_name")
+storageLocation='abfs://data@telefonicabrstor661f42a0.dfs.core.windows.net'
 print("Storage Location from Config File: ", storageLocation)
 
 username = sys.argv[1]
 print("PySpark Runtime Arg: ", sys.argv[1])
 
 
-#---------------------------------------------------
-#               ICEBERG INCREMENTAL READ
-#---------------------------------------------------
-
-# ICEBERG TABLE HISTORY (SHOWS EACH SNAPSHOT AND TIMESTAMP)
-spark.sql("SELECT * FROM spark_catalog.HOL_DB_{0}.HIST_TRX_{0}.history".format(username)).show()
-
-# ICEBERG TABLE SNAPSHOTS (USEFUL FOR INCREMENTAL QUERIES AND TIME TRAVEL)
-spark.sql("SELECT * FROM spark_catalog.HOL_DB_{0}.HIST_TRX_{0}.snapshots".format(username)).show()
-
-# STORE FIRST AND LAST SNAPSHOT ID'S FROM SNAPSHOTS TABLE
-snapshots_df = spark.sql("SELECT * FROM spark_catalog.HOL_DB_{0}.HIST_TRX_{0}.snapshots;".format(username))
-
-# SNAPSHOTS
-snapshots_df.show()
-
-last_snapshot = snapshots_df.select("snapshot_id").tail(1)[0][0]
-#second_snapshot = snapshots_df.select("snapshot_id").collect()[1][0]
-first_snapshot = snapshots_df.select("snapshot_id").head(1)[0][0]
-
-incReadDf = spark.read\
-    .format("iceberg")\
-    .option("start-snapshot-id", first_snapshot)\
-    .option("end-snapshot-id", last_snapshot)\
-    .load("spark_catalog.HOL_DB_{0}.HIST_TRX_{0}".format(username))
-
-print("Incremental Report:")
-incReadDf.show()
-
-
 #-----------------------------------------------------
 #               JOIN INCREMENTAL READ WITH CUST INFO
 #-----------------------------------------------------
 
-### LOAD CUSTOMER DATA REFINED
-custDf = spark.sql("SELECT * FROM spark_catalog.HOL_DB_{0}.CUST_TABLE_REFINED_{0}".format(username))
+### CREATE GOLD TABLES
 
-print("Cust DF Schema: ")
-custDf.printSchema()
+#### PRODUCT NAMES COUNT
+productNamesGoldDf = spark.sql("SELECT PRODUCTID, PRODUCTNAME, COUNT(*) FROM SPARK_CATALOG.DEFAULT.PRODUCTS_SILVER GROUP BY PRODUCTID, PRODUCTNAME")
+productNamesGoldDf.writeTo("SPARK_CATALOG.DEFAULT.PRODUCT_NAMES_GOLD").using("iceberg").createOrReplace()
 
-joinDf = incReadDf.join(custDf, custDf.CREDIT_CARD_NUMBER == incReadDf.credit_card_number, 'inner')
+#### COUNT USERS PER PRODUCT
+countUsersPerProductGoldDf = spark.sql("SELECT PRODUCTID, COUNT(USER_ID) FROM SPARK_CATALOG.DEFAULT.PRODUCTS_SILVER")
+countUsersPerProductGoldDf.writeTo("SPARK_CATALOG.DEFAULT.COUNT_USERS_PER_PRODUCT_GOLD").using("iceberg").createOrReplace()
 
-distanceFunc = F.udf(lambda arr: (((arr[2]-arr[0])**2)+((arr[3]-arr[1])**2)**(1/2)), FloatType())
-distanceDf = joinDf.withColumn("trx_dist_from_home", distanceFunc(F.array("latitude", "longitude",
-                                                                            "address_latitude", "address_longitude")))
+#### AVERAGE GROSS VALUE PER PRODUCT
+avgValPerProductGoldDf = spark.sql("SELECT PRODUCTID, AVG(GROSSVALUE) FROM SPARK_CATALOG.DEFAULT.PRODUCTS_SILVER")
+avgValPerProductGoldDf.writeTo("SPARK_CATALOG.DEFAULT.AVG_VALUE_PER_PRODUCT_GOLD").using("iceberg").createOrReplace()
 
-# SELECT CUSTOMERS WHERE TRANSACTION OCCURRED MORE THAN 100 MILES FROM HOME
-distanceDf = distanceDf.filter(distanceDf.trx_dist_from_home > 50)
-
-
-#---------------------------------------------------
-#               SAVE DATA TO NEW ICEBERG TABLE
-#---------------------------------------------------
-
-#distanceDf.show()
-
-gold_cols = ['transaction_amount', 'transaction_currency', 'transaction_type', 'trx_dist_from_home', 'name', 'email', 'bank_country', 'account_no']
-
-distanceDf.select(*gold_cols).writeTo("spark_catalog.HOL_DB_{0}.GOLD_TABLE_{0}".format(username)).using("iceberg").createOrReplace()
-
-#spark.sql("SELECT * FROM spark_catalog.HOL_DB_{0}.GOLD_TABLE_{0}".format(username)).show()
+#### MONITORING
+monitoringKeyFieldsGoldDf = spark.sql("SELECT NU_TLFN, PRODUCTID, NRPROTOCOLO, INTERESSE FROM SPARK_CATALOG.DEFAULT.FACTS_SILVER")
+monitoringKeyFieldsGoldDf = monitoringKeyFieldsGoldDf.dropDuplicates()
+monitoringKeyFieldsGoldDf.writeTo("SPARK_CATALOG.DEFAULT.MONITORING_KEY_FIELDS_GOLD").using("iceberg").createOrReplace()

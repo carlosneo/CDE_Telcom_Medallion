@@ -45,117 +45,140 @@ from utils import *
 
 spark = SparkSession \
     .builder \
-    .appName("BANK TRANSACTIONS BRONZE LAYER") \
+    .appName("TELCO LAKEHOUSE BRONZE LAYER") \
     .getOrCreate()
 
-config = configparser.ConfigParser()
-config.read('/app/mount/parameters.conf')
-storageLocation=config.get("general","data_lake_name")
-print("Storage Location from Config File: ", storageLocation)
+storageLocation='abfs://data@telefonicabrstor661f42a0.dfs.core.windows.net'
+print("Storage Location: ", storageLocation)
 
 username = sys.argv[1]
 print("PySpark Runtime Arg: ", sys.argv[1])
 
 ### RECREATE DATABASE AND TRX TABLE
-spark.sql("DROP DATABASE IF EXISTS SPARK_CATALOG.HOL_DB_{} CASCADE".format(username))
-spark.sql("CREATE DATABASE IF NOT EXISTS SPARK_CATALOG.HOL_DB_{}".format(username))
-
-
-#---------------------------------------------------
-#               CREATE PII TABLE
-#---------------------------------------------------
-
-### PII DIMENSION TABLE
-piiDf = spark.read.options(header='True', delimiter=',').csv("{0}/mkthol/pii/{1}/pii".format(storageLocation, username))
-
-### CAST LAT LON AS FLOAT
-piiDf = piiDf.withColumn("address_latitude",  piiDf["address_latitude"].cast('float'))
-piiDf = piiDf.withColumn("address_longitude",  piiDf["address_longitude"].cast('float'))
-
-### STORE CUSTOMER DATA AS TABLE
-piiDf.writeTo("spark_catalog.HOL_DB_{0}.CUST_TABLE_{0}".format(username)).using("iceberg").createOrReplace()
-
+#spark.sql("DROP DATABASE IF EXISTS SPARK_CATALOG.TELCO_DB_{} CASCADE".format(username))
+#spark.sql("CREATE DATABASE IF NOT EXISTS SPARK_CATALOG.TELCO_DB_{}".format(username))
 
 #---------------------------------------------------
-#               CREATE REFINED CUSTOMER TABLE
+#               CREATE BRONZE TABLES
 #---------------------------------------------------
 
-spark.sql("DROP TABLE IF EXISTS SPARK_CATALOG.HOL_DB_{0}.CUST_TABLE_REFINED_{0}".format(username))
+INTEREST = '{0}/telco/demo/{1}/interest'.format(storageLocation, username)
+PRODUCT_SUBSCRIPTION = '{0}/telco/demo/{1}/productsubscription'.format(storageLocation, username)
+SVA_SUBSCRIPTION = '{0}/telco/demo/{1}/svasub'.format(storageLocation, username)
+ATENDIMENTO = '{0}/telco/demo/{1}/atendimento'.format(storageLocation, username)
 
-spark.sql("""CREATE TABLE SPARK_CATALOG.HOL_DB_{0}.CUST_TABLE_REFINED_{0}
-                USING iceberg
-                AS SELECT NAME, EMAIL, BANK_COUNTRY, ACCOUNT_NO, CREDIT_CARD_NUMBER, ADDRESS_LATITUDE, ADDRESS_LONGITUDE
-                FROM SPARK_CATALOG.HOL_DB_{0}.CUST_TABLE_{0}""".format(username))
+### LOAD INTEREST FROM CLOUD STORAGE
+interestDf = spark.read.parquet(INTEREST)
+interestDf.printSchema()
 
+### LOAD PRODUCT SUBSCRIPTION FROM CLOUD STORAGE
+productSubscriptionDf = spark.read.parquet(PRODUCT_SUBSCRIPTION)
+productSubscriptionDf.printSchema()
 
-#---------------------------------------------------
-#               SCHEMA EVOLUTION
-#---------------------------------------------------
+### LOAD INTEREST FROM CLOUD STORAGE
+svaSubDf = spark.read.parquet(SVA_SUBSCRIPTION)
+svaSubDf.printSchema()
 
-# UPDATE TYPES: Updating Latitude and Longitude FROM FLOAT TO DOUBLE
-spark.sql("""ALTER TABLE SPARK_CATALOG.HOL_DB_{0}.CUST_TABLE_REFINED_{0}
-                ALTER COLUMN ADDRESS_LATITUDE TYPE double""".format(username))
-
-spark.sql("""ALTER TABLE SPARK_CATALOG.HOL_DB_{0}.CUST_TABLE_REFINED_{0}
-                ALTER COLUMN ADDRESS_LONGITUDE TYPE double""".format(username))
-
-
-#---------------------------------------------------
-#               VALIDATE TABLE
-#---------------------------------------------------
-
-spark.sql("""SELECT * FROM SPARK_CATALOG.HOL_DB_{0}.CUST_TABLE_REFINED_{0}""".format(username)).show()
-
-
-#---------------------------------------------------
-#               CREATE TRANSACTIONS TABLE
-#---------------------------------------------------
-
-### LOAD HISTORICAL TRANSACTIONS FILE FROM CLOUD STORAGE
-transactionsDf = spark.read.json("{0}/mkthol/trans/{1}/rawtransactions".format(storageLocation, username))
-transactionsDf.printSchema()
-
-### RUN PYTHON FUNCTION TO FLATTEN NESTED STRUCTS AND VALIDATE NEW SCHEMA
-transactionsDf = transactionsDf.select(flatten_struct(transactionsDf.schema))
-transactionsDf.printSchema()
+### LOAD INTEREST FROM CLOUD STORAGE
+atendimentoDf = spark.read.parquet(ATENDIMENTO)
+atendimentoDf.printSchema()
 
 ### RENAME MULTIPLE COLUMNS
-cols = [col for col in transactionsDf.columns if col.startswith("transaction")]
-new_cols = [col.split(".")[1] for col in cols]
-transactionsDf = renameMultipleColumns(transactionsDf, cols, new_cols)
+#cols = [col for col in transactionsDf.columns if col.startswith("transaction")]
+#new_cols = [col.split(".")[1] for col in cols]
+#transactionsDf = renameMultipleColumns(transactionsDf, cols, new_cols)
 
 ### CAST TYPES
-cols = ["transaction_amount", "latitude", "longitude"]
-transactionsDf = castMultipleColumns(transactionsDf, cols)
-transactionsDf = transactionsDf.withColumn("event_ts", transactionsDf["event_ts"].cast("timestamp"))
+#cols = ["transaction_amount", "latitude", "longitude"]
+#transactionsDf = castMultipleColumns(transactionsDf, cols)
+#transactionsDf = transactionsDf.withColumn("event_ts", transactionsDf["event_ts"].cast("timestamp"))
 
-### SAVE TRANSACTIONS AS TABLE
-transactionsDf.writeTo("SPARK_CATALOG.HOL_DB_{0}.HIST_TRX_{0}".format(username))\
-                .using("iceberg")\
-                .tableProperty("write.format.default", "parquet")\
-                .createOrReplace()
+## CREATE BRONZE DB & TABLES IF NOT EXISTS
 
-print("COUNT OF TRANSACTIONS TABLE")
-spark.sql("SELECT COUNT(*) FROM SPARK_CATALOG.HOL_DB_{0}.HIST_TRX_{0};".format(username)).show()
+print("ATENDIMENTO BRONZE")
+try:
+    atendimentoDf.writeTo("SPARK_CATALOG.DEFAULT.ATENDIMENTO_BRONZE"). \
+        tableProperty("write.format.default", "parquet"). \
+        tableProperty("write.spark.fanout.enabled", "true"). \
+        partitionedBy(F.months("dtprazofinalanatel")). \
+        using("iceberg"). \
+        create()
+    print("CREATED ATENDIMENTO BRONZE")
+except Exception as e:
+    print("ATENDIMENTO BRONZE ALREADY EXISTS")
+    print('\n')
+    print(f'caught {type(e)}: e')
+    print("PERFORMING APPEND TO ATENDIMENTO BRONZE INSTEAD")
+    print('\n')
+    atendimentoDf.writeTo("SPARK_CATALOG.DEFAULT.ATENDIMENTO_BRONZE"). \
+        tableProperty("write.format.default", "parquet"). \
+        tableProperty("write.spark.fanout.enabled", "true"). \
+        partitionedBy(F.months("dtprazofinalanatel")). \
+        using("iceberg"). \
+        append()
+    print(e)
 
+print("PRODUCT SUBSCRIPTION BRONZE")
+try:
+    productSubscriptionDf.writeTo("SPARK_CATALOG.DEFAULT.PRODUCT_SUBSCRIPTION_BRONZE"). \
+        tableProperty("write.format.default", "parquet"). \
+        tableProperty("write.spark.fanout.enabled", "true"). \
+        partitionedBy(F.months("dt_prmr_atcv_lnha")). \
+        using("iceberg"). \
+        create()
+    print("CREATED PRODUCT SUBSCRIPTION BRONZE")
+except Exception as e:
+    print("PRODUCT SUBSCRIPTION BRONZE ALREADY EXISTS")
+    print('\n')
+    print(f'caught {type(e)}: e')
+    print("PERFORMING APPEND TO PRODUCT SUBSCRIPTION BRONZE INSTEAD")
+    print('\n')
+    productSubscriptionDf.writeTo("SPARK_CATALOG.DEFAULT.PRODUCT_SUBSCRIPTION_BRONZE"). \
+        tableProperty("write.format.default", "parquet"). \
+        tableProperty("write.spark.fanout.enabled", "true"). \
+        partitionedBy(F.months("dt_prmr_atcv_lnha")). \
+        using("iceberg"). \
+        append()
+    print(e)
 
-#---------------------------------------------------
-#               CREATE TRANSACTIONS BRANCH
-#---------------------------------------------------
+print("SVA SUBSCRIPTION BRONZE")
+try:
+    svaSubDf.writeTo("SPARK_CATALOG.DEFAULT.SVA_SUBSCRIPTION_BRONZE"). \
+        tableProperty("write.format.default", "parquet"). \
+        tableProperty("write.spark.fanout.enabled", "true"). \
+        using("iceberg"). \
+        create()
+    print("CREATED SVA SUBSCRIPTION BRONZE")
+except Exception as e:
+    print("SVA SUBSCRIPTION BRONZE ALREADY EXISTS")
+    print('\n')
+    print(f'caught {type(e)}: e')
+    print("PERFORMING APPEND TO SVA SUBSCRIPTION BRONZE INSTEAD")
+    print('\n')
+    svaSubDf.writeTo("SPARK_CATALOG.DEFAULT.SVA_SUBSCRIPTION_BRONZE"). \
+        tableProperty("write.format.default", "parquet"). \
+        tableProperty("write.spark.fanout.enabled", "true"). \
+        using("iceberg"). \
+        append()
+    print(e)
 
-### TRANSACTIONS FACT TABLE
-trxBatchDf = spark.read.json("{0}/mkthol/trans/{1}/trx_batch_2".format(storageLocation, username))
-
-### TRX DF SCHEMA BEFORE CASTING
-trxBatchDf.printSchema()
-
-### CAST TYPES
-cols = ["transaction_amount", "latitude", "longitude"]
-trxBatchDf = castMultipleColumns(trxBatchDf, cols)
-trxBatchDf = trxBatchDf.withColumn("event_ts", trxBatchDf["event_ts"].cast("timestamp"))
-
-# CREATE TABLE BRANC
-spark.sql("ALTER TABLE SPARK_CATALOG.HOL_DB_{0}.HIST_TRX_{0} CREATE BRANCH ingestion_branch".format(username))
-
-# WRITE DATA OPERATION ON TABLE BRANCH
-trxBatchDf.write.format("iceberg").option("branch", "ingestion_branch").mode("append").save("SPARK_CATALOG.HOL_DB_{0}.HIST_TRX_{0}".format(username))
+print("INTEREST BRONZE")
+try:
+    interestDf.writeTo("SPARK_CATALOG.DEFAULT.INTEREST_BRONZE"). \
+        tableProperty("write.format.default", "parquet"). \
+        tableProperty("write.spark.fanout.enabled", "true"). \
+        using("iceberg"). \
+        create()
+    print("CREATED INTEREST BRONZE")
+except Exception as e:
+    print("INTEREST BRONZE ALREADY EXISTS")
+    print('\n')
+    print(f'caught {type(e)}: e')
+    print("PERFORMING APPEND TO INTEREST BRONZE INSTEAD")
+    print('\n')
+    interestDf.writeTo("SPARK_CATALOG.DEFAULT.INTEREST_BRONZE"). \
+        tableProperty("write.format.default", "parquet"). \
+        tableProperty("write.spark.fanout.enabled", "true"). \
+        using("iceberg"). \
+        append()
+    print(e)

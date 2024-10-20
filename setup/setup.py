@@ -108,7 +108,7 @@ def createNavigationData(spark):
     try:
         print("CREATING DF...\n")
         dg = TelcoDataGen(spark)
-        navigationDf = dg.transactionsBatchDataGen()
+        navigationDf = dg.navigationDataGen()
     except Exception as e:
         print("CREATING DATA UNSUCCESSFUL")
         print('\n')
@@ -124,11 +124,11 @@ def createAtendimentoData(spark):
     """
 
     try:
-        print("CREATING TRANSACTIONS DF...\n")
+        print("CREATING ATENDIMENTO DF...\n")
         dg = TelcoDataGen(spark)
         atendimentoDf = dg.atendimentoDataGen()
     except Exception as e:
-        print("CREATING DATA UNSUCCESSFUL")
+        print("CREATING ATENDIMENTO DATA UNSUCCESSFUL")
         print('\n')
         print(f'caught {type(e)}: e')
         print(e)
@@ -222,7 +222,7 @@ def saveInvoiceData(invoiceDf, storageLocation, username):
             mode("overwrite"). \
             save("{0}/telco/demo/{1}/invoice".format(storageLocation, username))
     except Exception as e:
-        print("SAVING SYNTHETIC TRANSACTION DATA UNSUCCESSFUL")
+        print("SAVING INVOICE DATA UNSUCCESSFUL")
         print('\n')
         print(f'caught {type(e)}: e')
         print(e)
@@ -310,10 +310,10 @@ def saveProductSubscriptionData(productSubscriptionDf, storageLocation, username
 
 def saveInterestData(interestDf, storageLocation, username):
     """
-    Method to save Antenna Data to Cloud Storage in csv format
+    Method to save Antenna Data to Cloud Storage in parquet format
     """
 
-    print("SAVING ANTENNA DF TO CSV IN CLOUD STORAGE...\n")
+    print("SAVING ANTENNA DF TO PARQUET IN CLOUD STORAGE...\n")
 
     try:
         interestDf \
@@ -330,7 +330,7 @@ def saveInterestData(interestDf, storageLocation, username):
 
 def saveSvaSubData(svaSubDf, storageLocation, username):
     """
-    Method to save SVA SUB Data to Cloud Storage in csv format
+    Method to save SVA SUB Data to Cloud Storage in parquet format
     """
 
     print("SAVING SVA SUB DF TO PARQUET IN CLOUD STORAGE...\n")
@@ -364,17 +364,17 @@ def main():
 
         print("PROCESSING USER {}...\n".format(username))
 
-        invoiceDf = createInvoicingData(spark)
-        saveInvoicingData(invoiceDf, storageLocation, username)
+        #invoiceDf = createInvoicingData(spark)
+        #saveInvoiceData(invoiceDf, storageLocation, username)
 
-        navigationDf = createNavigationData(spark)
-        saveNavigationData(navigationDf, storageLocation, username)
+        #navigationDf = createNavigationData(spark)
+        #saveNavigationData(navigationDf, storageLocation, username)
 
         atendimentoDf = createAtendimentoData(spark)
         saveAtendimentoData(atendimentoDf, storageLocation, username)
 
-        antennaDf = createAntennaData(spark)
-        saveAntennaData(antennaDf, storageLocation, username)
+        #antennaDf = createAntennaData(spark)
+        #saveAntennaData(antennaDf, storageLocation, username)
 
         productSubscriptionDf = createProductSubscriptionData(spark)
         saveProductSubscriptionData(productSubscriptionDf, storageLocation, username)
