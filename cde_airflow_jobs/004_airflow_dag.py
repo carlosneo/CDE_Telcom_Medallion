@@ -50,9 +50,8 @@ from airflow.providers.github.operators.github import GithubOperator
 import pendulum
 import logging
 
-
-username = "user001" # Enter your username here
-dag_name = "BankFraudHol-"+username
+username = "pauldefusco" # Enter your username here
+dag_name = "lakehouse-orch-"+username
 logger = logging.getLogger(__name__)
 
 print("Using DAG Name: {}".format(dag_name))
@@ -67,7 +66,7 @@ dag = DAG(
         dag_name,
         default_args=default_args,
         catchup=False,
-        schedule_interval='@once',
+        schedule_interval='0 * * * *',
         is_paused_upon_creation=False
         )
 
@@ -76,37 +75,52 @@ start = DummyOperator(
         dag=dag
 )
 
-bronze = CDEJobRunOperator(
-        task_id='data-ingestion',
+datagen = CDEJobRunOperator(
+        task_id='raw-datagen',
         dag=dag,
-        job_name='001_Lakehouse_Bronze_'+username, #Must match name of CDE Spark Job in the CDE Jobs UI
+        job_name='mkt-hol-setup-'+username, #Must match name of CDE Spark Job in the CDE Jobs UI
         trigger_rule='all_success',
+        variables={'maxParticipants' = '1',
+                    'storageLocation' = 'abfs://data@telefonicabrstor661f42a0.dfs.core.windows.net'}
+        )
+
+bronze = CDEJobRunOperator(
+        task_id='bronze-layer',
+        dag=dag,
+        job_name='spark_bronze', #Must match name of CDE Spark Job in the CDE Jobs UI
+        trigger_rule='all_success',
+        variables={'storageLocation' = 'abfs://data@telefonicabrstor661f42a0.dfs.core.windows.net',
+                    'username' = 'user001'}
         )
 
 silver = CDEJobRunOperator(
-        task_id='iceberg-merge-branch',
+        task_id='silver-layer',
         dag=dag,
-        job_name='002_Lakehouse_Silver_'+username, #Must match name of CDE Spark Job in the CDE Jobs UI
+        job_name='spark_silver', #Must match name of CDE Spark Job in the CDE Jobs UI
         trigger_rule='all_success',
+        variables={'storageLocation'= 'abfs://data@telefonicabrstor661f42a0.dfs.core.windows.net',
+                    'username' = 'user001'}
         )
 
 gold = CDEJobRunOperator(
         task_id='gold-layer',
         dag=dag,
-        job_name='003_Lakehouse_Gold_'+username, #Must match name of CDE Spark Job in the CDE Jobs UI
+        job_name='spark_gold', #Must match name of CDE Spark Job in the CDE Jobs UI
         trigger_rule='all_success',
+        variables={'storageLocation'= 'abfs://data@telefonicabrstor661f42a0.dfs.core.windows.net',
+                    'username' = 'user001'}
         )
 
-github_list_repos = GithubOperator(
+"""github_list_repos = GithubOperator(
     task_id="github_list_repos",
     github_method="get_user",
     result_processor=lambda user: logger.info(list(user.get_repos())),
     dag=dag
-)
+)"""
 
 end = DummyOperator(
         task_id="end",
         dag=dag
 )
 
-start >> bronze >> silver >> gold >> github_list_repos >> end
+start >> datagen >> bronze >> silver >> gold >> end

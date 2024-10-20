@@ -96,6 +96,24 @@ For example:
 % ./setup/deploy_hol.sh pauldefusco pauldefusco 3 abfs://logs@go01demoazure.dfs.core.windows.net/data
 ```
 
+### 3. Start Pipeline Instructions
+
+```
+% ./setup/start_pipeline.sh <docker-user> <cdp-workload-user> <number-of-participants> <storage-location>
+```
+
+For example:
+
+```
+#AWS
+% ./setup/start_pipeline.sh pauldefusco pauldefusco 1 s3a://goes-se-sandbox01/data
+```
+
+```
+#Azure
+% ./setup/start_pipeline.sh pauldefusco pauldefusco 1 abfs://logs@go01demoazure.dfs.core.windows.net/data
+```
+
 ## Teardown Instructions
 
 When you are done run this script to tear down the data in the Catalog but not in S3. That step will be handles by the GOES teardown scripts.

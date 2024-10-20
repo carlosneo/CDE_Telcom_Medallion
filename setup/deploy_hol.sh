@@ -68,15 +68,14 @@ cde resource upload --name Spark-Files-Shared \
     --local-path cde_spark_jobs/002_Lakehouse_Silver.py \
     --local-path cde_spark_jobs/003_Lakehouse_Gold.py
 
-#echo "CREATE AIRFLOW FILES SHARED RESOURCE"
-#cde resource delete --name Airflow-Files-Shared
-#cde resource create --type files --name Airflow-Files-Shared
-#cde resource upload --name Airflow-Files-Shared --local-path cde_airflow_jobs/my_file.txt
+echo "CREATE AIRFLOW FILES SHARED RESOURCE"
+cde resource delete --name Airflow-Files-Shared
+cde resource create --type files --name Airflow-Files-Shared
+cde resource upload --name Airflow-Files-Shared --local-path cde_airflow_jobs/004_airflow_dag.py
 echo "CREATE PYTHON ENVIRONMENT SHARED RESOURCE"
 cde resource delete --name Python-Env-Shared
 cde resource create --type python-env --name Python-Env-Shared
 cde resource upload --name Python-Env-Shared --local-path cde_spark_jobs/requirements.txt
-
 
 function loading_icon_env() {
   local loading_animation=( '—' "\\" '|' '/' )
@@ -104,41 +103,6 @@ function loading_icon_env() {
 loading_icon_env "Python Env Build in Progress"
 
 e=$(date)
-
-
-cde job create \
-  --name spark_bronze \
-  --arg user001 \
-  --type spark \
-  --mount-1-resource Spark-Files-Shared \
-  --application-file 001_Lakehouse_Bronze.py \
-  --driver-cores 2 \
-  --driver-memory "4g" \
-  --executor-cores 4 \
-  --executor-memory "10g"
-
-cde job create \
-  --name spark_silver \
-  --arg user001 \
-  --type spark \
-  --mount-1-resource Spark-Files-Shared \
-  --application-file 002_Lakehouse_Silver.py \
-  --driver-cores 2 \
-  --driver-memory "4g" \
-  --executor-cores 4 \
-  --executor-memory "10g" \
-  --python-env-resource-name Python-Env-Shared
-
-cde job create \
-  --name spark_gold \
-  --arg user001 \
-  --type spark \
-  --mount-1-resource Spark-Files-Shared \
-  --application-file 003_Lakehouse_Gold.py \
-  --driver-cores 2 \
-  --driver-memory "4g" \
-  --executor-cores 4 \
-  --executor-memory "10g"
 
 echo "##########################################################"
 printf "${fmt}" "CDE ${cde_demo} HOL deployment completed."
