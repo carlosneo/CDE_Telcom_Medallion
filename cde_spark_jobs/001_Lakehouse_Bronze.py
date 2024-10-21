@@ -48,11 +48,11 @@ spark = SparkSession \
     .appName("TELCO LAKEHOUSE BRONZE LAYER") \
     .getOrCreate()
 
-storageLocation='abfs://data@telefonicabrstor661f42a0.dfs.core.windows.net'
-print("Storage Location: ", storageLocation)
-
 username = sys.argv[1]
-print("PySpark Runtime Arg: ", sys.argv[1])
+print("PySpark Runtime Arg: ", username)
+
+storageLocation=sys.argv[2]
+print("Storage Location: ", storageLocation)
 
 ### RECREATE DATABASE AND TRX TABLE
 #spark.sql("DROP DATABASE IF EXISTS SPARK_CATALOG.TELCO_DB_{} CASCADE".format(username))
@@ -94,10 +94,12 @@ atendimentoDf.printSchema()
 #transactionsDf = transactionsDf.withColumn("event_ts", transactionsDf["event_ts"].cast("timestamp"))
 
 ## CREATE BRONZE DB & TABLES IF NOT EXISTS
+print("CREATE TELCO DB: TELCO_MEDALLION")
+spark.sql("CREATE DATABASE IF NOT EXISTS TELCO_MEDALLION")
 
 print("ATENDIMENTO BRONZE")
 try:
-    atendimentoDf.writeTo("SPARK_CATALOG.DEFAULT.ATENDIMENTO_BRONZE"). \
+    atendimentoDf.writeTo("SPARK_CATALOG.TELCO_MEDALLION.ATENDIMENTO_BRONZE"). \
         tableProperty("write.format.default", "parquet"). \
         tableProperty("write.spark.fanout.enabled", "true"). \
         partitionedBy(F.months("dtprazofinalanatel")). \
@@ -110,7 +112,7 @@ except Exception as e:
     print(f'caught {type(e)}: e')
     print("PERFORMING APPEND TO ATENDIMENTO BRONZE INSTEAD")
     print('\n')
-    atendimentoDf.writeTo("SPARK_CATALOG.DEFAULT.ATENDIMENTO_BRONZE"). \
+    atendimentoDf.writeTo("SPARK_CATALOG.TELCO_MEDALLION.ATENDIMENTO_BRONZE"). \
         tableProperty("write.format.default", "parquet"). \
         tableProperty("write.spark.fanout.enabled", "true"). \
         partitionedBy(F.months("dtprazofinalanatel")). \
@@ -120,10 +122,9 @@ except Exception as e:
 
 print("PRODUCT SUBSCRIPTION BRONZE")
 try:
-    productSubscriptionDf.writeTo("SPARK_CATALOG.DEFAULT.PRODUCT_SUBSCRIPTION_BRONZE"). \
+    productSubscriptionDf.writeTo("SPARK_CATALOG.TELCO_MEDALLION.PRODUCT_SUBSCRIPTION_BRONZE"). \
         tableProperty("write.format.default", "parquet"). \
         tableProperty("write.spark.fanout.enabled", "true"). \
-        partitionedBy(F.months("dt_prmr_atcv_lnha")). \
         using("iceberg"). \
         create()
     print("CREATED PRODUCT SUBSCRIPTION BRONZE")
@@ -133,17 +134,16 @@ except Exception as e:
     print(f'caught {type(e)}: e')
     print("PERFORMING APPEND TO PRODUCT SUBSCRIPTION BRONZE INSTEAD")
     print('\n')
-    productSubscriptionDf.writeTo("SPARK_CATALOG.DEFAULT.PRODUCT_SUBSCRIPTION_BRONZE"). \
+    productSubscriptionDf.writeTo("SPARK_CATALOG.TELCO_MEDALLION.PRODUCT_SUBSCRIPTION_BRONZE"). \
         tableProperty("write.format.default", "parquet"). \
         tableProperty("write.spark.fanout.enabled", "true"). \
-        partitionedBy(F.months("dt_prmr_atcv_lnha")). \
         using("iceberg"). \
         append()
     print(e)
 
 print("SVA SUBSCRIPTION BRONZE")
 try:
-    svaSubDf.writeTo("SPARK_CATALOG.DEFAULT.SVA_SUBSCRIPTION_BRONZE"). \
+    svaSubDf.writeTo("SPARK_CATALOG.TELCO_MEDALLION.SVA_SUBSCRIPTION_BRONZE"). \
         tableProperty("write.format.default", "parquet"). \
         tableProperty("write.spark.fanout.enabled", "true"). \
         using("iceberg"). \
@@ -155,7 +155,7 @@ except Exception as e:
     print(f'caught {type(e)}: e')
     print("PERFORMING APPEND TO SVA SUBSCRIPTION BRONZE INSTEAD")
     print('\n')
-    svaSubDf.writeTo("SPARK_CATALOG.DEFAULT.SVA_SUBSCRIPTION_BRONZE"). \
+    svaSubDf.writeTo("SPARK_CATALOG.TELCO_MEDALLION.SVA_SUBSCRIPTION_BRONZE"). \
         tableProperty("write.format.default", "parquet"). \
         tableProperty("write.spark.fanout.enabled", "true"). \
         using("iceberg"). \
@@ -164,7 +164,7 @@ except Exception as e:
 
 print("INTEREST BRONZE")
 try:
-    interestDf.writeTo("SPARK_CATALOG.DEFAULT.INTEREST_BRONZE"). \
+    interestDf.writeTo("SPARK_CATALOG.TELCO_MEDALLION.INTEREST_BRONZE"). \
         tableProperty("write.format.default", "parquet"). \
         tableProperty("write.spark.fanout.enabled", "true"). \
         using("iceberg"). \
@@ -176,7 +176,7 @@ except Exception as e:
     print(f'caught {type(e)}: e')
     print("PERFORMING APPEND TO INTEREST BRONZE INSTEAD")
     print('\n')
-    interestDf.writeTo("SPARK_CATALOG.DEFAULT.INTEREST_BRONZE"). \
+    interestDf.writeTo("SPARK_CATALOG.TELCO_MEDALLION.INTEREST_BRONZE"). \
         tableProperty("write.format.default", "parquet"). \
         tableProperty("write.spark.fanout.enabled", "true"). \
         using("iceberg"). \

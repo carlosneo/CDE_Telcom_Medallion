@@ -101,7 +101,7 @@ class TelcoDataGen:
         self.spark.conf.set("spark.sql.shuffle.partitions", shuffle_partitions_requested)
 
         fakerDataspec = (DataGenerator(self.spark, rows=data_rows, partitions=partitions_requested)
-                    .withColumn("nu_tlfn", "string", minValue=1, maxValue=9234567890123, step=1) #text=FakerTextUS("credit_card_number")
+                    .withColumn("nu_tlfn", "string", minValue=1, maxValue=9234567890123, uniqueValues = 470000000000, step=1) #text=FakerTextUS("credit_card_number")
                     .withColumn("ds_ip", "string", minValue=12345678123, maxValue=9234567890123)
                     .withColumn("cd_imei", "string", minValue=1234567012345, maxValue=9234567890125)
                     .withColumn("cd_cgi", "string", minValue=123456734567890, maxValue=9934567890123456)
@@ -184,7 +184,7 @@ class TelcoDataGen:
         self.spark.conf.set("spark.sql.shuffle.partitions", shuffle_partitions_requested)
 
         fakerDataspec = (DataGenerator(self.spark, rows=data_rows, partitions=partitions_requested)
-                    .withColumn("nu_tlfn", "string", minValue=1, maxValue=9234567890123, step=1)
+                    .withColumn("nu_tlfn", "string", minValue=1, maxValue=9234567890123, step=1, uniqueValues=83334)
                     .withColumn("nu_doct", "string", minValue=891195, maxValue=14595999)
                     .withColumn("user_id", "string", minValue=90123, maxValue=92340123)
                     .withColumn("id_prdt", "int", minValue=1, maxValue=923457890, step=1)

@@ -46,7 +46,7 @@ from airflow.operators.python import PythonOperator
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.models.param import Param
 from airflow.operators.bash import BashOperator
-from airflow.providers.github.operators.github import GithubOperator
+#from airflow.providers.github.operators.github import GithubOperator
 import pendulum
 import logging
 
@@ -80,8 +80,8 @@ datagen = CDEJobRunOperator(
         dag=dag,
         job_name='mkt-hol-setup-'+username, #Must match name of CDE Spark Job in the CDE Jobs UI
         trigger_rule='all_success',
-        variables={'maxParticipants' = '1',
-                    'storageLocation' = 'abfs://data@telefonicabrstor661f42a0.dfs.core.windows.net'}
+        variables={'maxParticipants':'1',
+                    'storageLocation':'abfs://data@telefonicabrstor661f42a0.dfs.core.windows.net'}
         )
 
 bronze = CDEJobRunOperator(
@@ -89,8 +89,8 @@ bronze = CDEJobRunOperator(
         dag=dag,
         job_name='spark_bronze', #Must match name of CDE Spark Job in the CDE Jobs UI
         trigger_rule='all_success',
-        variables={'storageLocation' = 'abfs://data@telefonicabrstor661f42a0.dfs.core.windows.net',
-                    'username' = 'user001'}
+        variables={'storageLocation':'abfs://data@telefonicabrstor661f42a0.dfs.core.windows.net',
+                    'username':'user001'}
         )
 
 silver = CDEJobRunOperator(
@@ -98,8 +98,8 @@ silver = CDEJobRunOperator(
         dag=dag,
         job_name='spark_silver', #Must match name of CDE Spark Job in the CDE Jobs UI
         trigger_rule='all_success',
-        variables={'storageLocation'= 'abfs://data@telefonicabrstor661f42a0.dfs.core.windows.net',
-                    'username' = 'user001'}
+        variables={'storageLocation':'abfs://data@telefonicabrstor661f42a0.dfs.core.windows.net',
+                    'username':'user001'}
         )
 
 gold = CDEJobRunOperator(
@@ -107,8 +107,8 @@ gold = CDEJobRunOperator(
         dag=dag,
         job_name='spark_gold', #Must match name of CDE Spark Job in the CDE Jobs UI
         trigger_rule='all_success',
-        variables={'storageLocation'= 'abfs://data@telefonicabrstor661f42a0.dfs.core.windows.net',
-                    'username' = 'user001'}
+        variables={'storageLocation':'abfs://data@telefonicabrstor661f42a0.dfs.core.windows.net',
+                    'username':'user001'}
         )
 
 """github_list_repos = GithubOperator(

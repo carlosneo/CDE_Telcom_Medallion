@@ -48,12 +48,11 @@ spark = SparkSession \
     .appName("TELCO GOLD LAYER") \
     .getOrCreate()
 
-storageLocation='abfs://data@telefonicabrstor661f42a0.dfs.core.windows.net'
-print("Storage Location from Config File: ", storageLocation)
-
 username = sys.argv[1]
-print("PySpark Runtime Arg: ", sys.argv[1])
+print("PySpark Runtime Arg: ", username)
 
+storageLocation=sys.argv[2]
+print("Storage Location: ", storageLocation)
 
 #-----------------------------------------------------
 #               JOIN INCREMENTAL READ WITH CUST INFO
@@ -62,18 +61,18 @@ print("PySpark Runtime Arg: ", sys.argv[1])
 ### CREATE GOLD TABLES
 
 #### PRODUCT NAMES COUNT
-productNamesGoldDf = spark.sql("SELECT PRODUCTNAME, COUNT(*) FROM SPARK_CATALOG.DEFAULT.PRODUCTS_SILVER GROUP BY PRODUCTNAME")
-productNamesGoldDf.writeTo("SPARK_CATALOG.DEFAULT.PRODUCT_NAMES_GOLD").using("iceberg").createOrReplace()
+productNamesGoldDf = spark.sql("SELECT PRODUCTNAME, COUNT(*) FROM SPARK_CATALOG.TELCO_MEDALLION.PRODUCTS_SILVER GROUP BY PRODUCTNAME")
+productNamesGoldDf.writeTo("SPARK_CATALOG.TELCO_MEDALLION.PRODUCT_NAMES_GOLD").using("iceberg").createOrReplace()
 
 #### COUNT USERS PER PRODUCT
-countUsersPerProductGoldDf = spark.sql("SELECT PRODUCTID, COUNT(USER_ID) FROM SPARK_CATALOG.DEFAULT.PRODUCTS_SILVER GROUP BY PRODUCTID")
-countUsersPerProductGoldDf.writeTo("SPARK_CATALOG.DEFAULT.COUNT_USERS_PER_PRODUCT_GOLD").using("iceberg").createOrReplace()
+countUsersPerProductGoldDf = spark.sql("SELECT PRODUCTID, COUNT(USER_ID) FROM SPARK_CATALOG.TELCO_MEDALLION.PRODUCTS_SILVER GROUP BY PRODUCTID")
+countUsersPerProductGoldDf.writeTo("SPARK_CATALOG.TELCO_MEDALLION.COUNT_USERS_PER_PRODUCT_GOLD").using("iceberg").createOrReplace()
 
 #### AVERAGE GROSS VALUE PER PRODUCT
-avgValPerProductGoldDf = spark.sql("SELECT PRODUCTID, AVG(GROSSVALUE) FROM SPARK_CATALOG.DEFAULT.PRODUCTS_SILVER GROUP BY PRODUCTID")
-avgValPerProductGoldDf.writeTo("SPARK_CATALOG.DEFAULT.AVG_VALUE_PER_PRODUCT_GOLD").using("iceberg").createOrReplace()
+avgValPerProductGoldDf = spark.sql("SELECT PRODUCTID, AVG(GROSSVALUE) FROM SPARK_CATALOG.TELCO_MEDALLION.PRODUCTS_SILVER GROUP BY PRODUCTID")
+avgValPerProductGoldDf.writeTo("SPARK_CATALOG.TELCO_MEDALLION.AVG_VALUE_PER_PRODUCT_GOLD").using("iceberg").createOrReplace()
 
 #### MONITORING
-monitoringKeyFieldsGoldDf = spark.sql("SELECT NU_TLFN, PRODUCTID, NRPROTOCOLO, INTERESSE FROM SPARK_CATALOG.DEFAULT.FACTS_SILVER")
+monitoringKeyFieldsGoldDf = spark.sql("SELECT NU_TLFN, PRODUCTID, NRPROTOCOLO, INTERESSE FROM SPARK_CATALOG.TELCO_MEDALLION.FACTS_SILVER")
 monitoringKeyFieldsGoldDf = monitoringKeyFieldsGoldDf.dropDuplicates()
-monitoringKeyFieldsGoldDf.writeTo("SPARK_CATALOG.DEFAULT.MONITORING_KEY_FIELDS_GOLD").using("iceberg").createOrReplace()
+monitoringKeyFieldsGoldDf.writeTo("SPARK_CATALOG.TELCO_MEDALLION.MONITORING_KEY_FIELDS_GOLD").using("iceberg").createOrReplace()

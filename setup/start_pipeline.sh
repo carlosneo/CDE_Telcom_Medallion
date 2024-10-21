@@ -17,19 +17,27 @@ printf "${fmt}" "performed by Docker User:" "${docker_user}"
 echo "##########################################################"
 
 echo "CREATE SPARK FILES SHARED RESOURCE"
-cde resource delete --name Spark-Files-Shared
-cde resource create --type files --name Spark-Files-Shared
 cde resource upload --name Spark-Files-Shared \
     --local-path cde_spark_jobs/parameters.conf \
     --local-path cde_spark_jobs/utils.py \
     --local-path cde_spark_jobs/001_Lakehouse_Bronze.py \
     --local-path cde_spark_jobs/002_Lakehouse_Silver.py \
     --local-path cde_spark_jobs/003_Lakehouse_Gold.py \
-    --local-path setup/purge.py
+    --local-path setup/purge.py \
+
+echo "CREATE AIRFLOW FILES SHARED RESOURCE"
+cde resource create \
+  --name Airflow-Files-Shared \
+  --type files
+cde resource upload \
+  --name Airflow-Files-Shared \
+  --local-path cde_airflow_jobs/004_airflow_dag.py
 
 echo "CREATE & RUN PURGE TABLES JOB"
 cde job create \
+  --type spark \
   --name purge-tables \
+  --mount-1-resource Spark-Files-Shared \
   --application-file purge.py \
   --executor-memory "2g" \
   --executor-cores "2" \
@@ -46,9 +54,9 @@ function loading_icon_job() {
   trap "tput cnorm" EXIT
 
   while true; do
-    job_status=$(cde run list --filter 'job[like]%purge-tables' | jq -r '[last] | .[].status')
+    job_status=$(cde run list --filter "job[like]%purge-tables" | jq -r "[last] | .[].status")
     if [[ $job_status == "succeeded" ]]; then
-      echo "Setup Job Execution Completed"
+      echo "Purge Tables Job Execution Completed"
       break
     else
       for frame in "${loading_animation[@]}" ; do
@@ -85,7 +93,7 @@ function loading_icon_job() {
   trap "tput cnorm" EXIT
 
   while true; do
-    job_status=$(cde run list --filter 'job[like]%mkt-hol-setup-'$cde_user | jq -r '[last] | .[].status')
+    job_status=$(cde run list --filter "job[like]%mkt-hol-setup-"$cde_user | jq -r "[last] | .[].status")
     if [[ $job_status == "succeeded" ]]; then
       echo "Setup Job Execution Completed"
       break
@@ -114,7 +122,7 @@ cde job create \
   --driver-cores 2 \
   --driver-memory "4g" \
   --executor-cores 4 \
-  --executor-memory "10g"
+  --executor-memory "16g"
 cde job run \
   --name spark_bronze
 
@@ -127,9 +135,9 @@ function loading_icon_job() {
   trap "tput cnorm" EXIT
 
   while true; do
-    job_status=$(cde run list --filter 'job[like]%spark_bronze' | jq -r '[last] | .[].status')
+    job_status=$(cde run list --filter "job[like]%spark_bronze" | jq -r "[last] | .[].status")
     if [[ $job_status == "succeeded" ]]; then
-      echo "Setup Job Execution Completed"
+      echo "Spark Bronze Job Execution Completed"
       break
     else
       for frame in "${loading_animation[@]}" ; do
@@ -171,11 +179,18 @@ cde job create \
   --driver-memory "4g" \
   --executor-cores 4 \
   --executor-memory "10g"
+
+cde job delete \
+  --name lakehouse_orchestration
+  
 cde job create \
   --name lakehouse_orchestration \
   --type airflow \
   --mount-1-resource Airflow-Files-Shared \
   --dag-file 004_airflow_dag.py
+
+e=$(date)
+fmt="%-30s %s\n"
 
 echo "##########################################################"
 printf "${fmt}" "CDE ${cde_demo} HOL deployment completed."

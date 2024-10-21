@@ -49,25 +49,24 @@ spark = SparkSession \
     .appName("TELCO LAKEHOUSE SILVER LAYER") \
     .getOrCreate()
 
-storageLocation='abfs://data@telefonicabrstor661f42a0.dfs.core.windows.net'
-print("Storage Location from Config File: ", storageLocation)
-
 username = sys.argv[1]
-print("PySpark Runtime Arg: ", sys.argv[1])
+print("PySpark Runtime Arg: ", username)
 
+storageLocation=sys.argv[2]
+print("Storage Location: ", storageLocation)
 
 #---------------------------------------------------
 #               INCREMENTAL READ ON BRONZE LAYER
 #---------------------------------------------------
 
 # ICEBERG TABLE HISTORY (SHOWS EACH SNAPSHOT AND TIMESTAMP)
-spark.sql("SELECT * FROM SPARK_CATALOG.DEFAULT.ATENDIMENTO_BRONZE.history").show()
+spark.sql("SELECT * FROM SPARK_CATALOG.TELCO_MEDALLION.ATENDIMENTO_BRONZE.history").show()
 
 # ICEBERG TABLE SNAPSHOTS (USEFUL FOR INCREMENTAL QUERIES AND TIME TRAVEL)
-spark.sql("SELECT * FROM SPARK_CATALOG.DEFAULT.ATENDIMENTO_BRONZE.snapshots").show()
+spark.sql("SELECT * FROM SPARK_CATALOG.TELCO_MEDALLION.ATENDIMENTO_BRONZE.snapshots").show()
 
 # STORE FIRST AND LAST SNAPSHOT ID'S FROM SNAPSHOTS TABLE FOR ATENDIMENTO_BRONZE
-snapshots_df = spark.sql("SELECT * FROM SPARK_CATALOG.DEFAULT.ATENDIMENTO_BRONZE.snapshots;")
+snapshots_df = spark.sql("SELECT * FROM SPARK_CATALOG.TELCO_MEDALLION.ATENDIMENTO_BRONZE.snapshots;")
 
 last_snapshot = snapshots_df.select("snapshot_id").tail(1)[0][0]
 second_snapshot = snapshots_df.select("snapshot_id").collect()[0][0]
@@ -76,16 +75,16 @@ incReadAtendimentoDf = spark.read\
     .format("iceberg")\
     .option("start-snapshot-id", second_snapshot)\
     .option("end-snapshot-id", last_snapshot)\
-    .load("SPARK_CATALOG.DEFAULT.ATENDIMENTO_BRONZE")
+    .load("SPARK_CATALOG.TELCO_MEDALLION.ATENDIMENTO_BRONZE")
 
 # ICEBERG TABLE HISTORY (SHOWS EACH SNAPSHOT AND TIMESTAMP)
-spark.sql("SELECT * FROM SPARK_CATALOG.DEFAULT.PRODUCT_SUBSCRIPTION_BRONZE.history").show()
+spark.sql("SELECT * FROM SPARK_CATALOG.TELCO_MEDALLION.PRODUCT_SUBSCRIPTION_BRONZE.history").show()
 
 # ICEBERG TABLE SNAPSHOTS (USEFUL FOR INCREMENTAL QUERIES AND TIME TRAVEL)
-spark.sql("SELECT * FROM SPARK_CATALOG.DEFAULT.PRODUCT_SUBSCRIPTION_BRONZE.snapshots").show()
+spark.sql("SELECT * FROM SPARK_CATALOG.TELCO_MEDALLION.PRODUCT_SUBSCRIPTION_BRONZE.snapshots").show()
 
 # STORE FIRST AND LAST SNAPSHOT ID'S FROM SNAPSHOTS TABLE FOR PRODUCT_SUBSCRIPTION_BRONZE
-snapshots_df = spark.sql("SELECT * FROM SPARK_CATALOG.DEFAULT.PRODUCT_SUBSCRIPTION_BRONZE.snapshots;")
+snapshots_df = spark.sql("SELECT * FROM SPARK_CATALOG.TELCO_MEDALLION.PRODUCT_SUBSCRIPTION_BRONZE.snapshots;")
 
 last_snapshot = snapshots_df.select("snapshot_id").tail(1)[0][0]
 second_snapshot = snapshots_df.select("snapshot_id").collect()[0][0]
@@ -94,16 +93,16 @@ incReadProdSubDf = spark.read\
     .format("iceberg")\
     .option("start-snapshot-id", second_snapshot)\
     .option("end-snapshot-id", last_snapshot)\
-    .load("SPARK_CATALOG.DEFAULT.PRODUCT_SUBSCRIPTION_BRONZE")
+    .load("SPARK_CATALOG.TELCO_MEDALLION.PRODUCT_SUBSCRIPTION_BRONZE")
 
 # ICEBERG TABLE HISTORY (SHOWS EACH SNAPSHOT AND TIMESTAMP)
-spark.sql("SELECT * FROM SPARK_CATALOG.DEFAULT.SVA_SUBSCRIPTION_BRONZE.history").show()
+spark.sql("SELECT * FROM SPARK_CATALOG.TELCO_MEDALLION.SVA_SUBSCRIPTION_BRONZE.history").show()
 
 # ICEBERG TABLE SNAPSHOTS (USEFUL FOR INCREMENTAL QUERIES AND TIME TRAVEL)
-spark.sql("SELECT * FROM SPARK_CATALOG.DEFAULT.SVA_SUBSCRIPTION_BRONZE.snapshots").show()
+spark.sql("SELECT * FROM SPARK_CATALOG.TELCO_MEDALLION.SVA_SUBSCRIPTION_BRONZE.snapshots").show()
 
 # STORE FIRST AND LAST SNAPSHOT ID'S FROM SNAPSHOTS TABLE FOR SVA SUBSCRIPTION
-snapshots_df = spark.sql("SELECT * FROM SPARK_CATALOG.DEFAULT.SVA_SUBSCRIPTION_BRONZE.snapshots;".format(username))
+snapshots_df = spark.sql("SELECT * FROM SPARK_CATALOG.TELCO_MEDALLION.SVA_SUBSCRIPTION_BRONZE.snapshots;".format(username))
 
 last_snapshot = snapshots_df.select("snapshot_id").tail(1)[0][0]
 second_snapshot = snapshots_df.select("snapshot_id").collect()[0][0]
@@ -112,16 +111,16 @@ incReadSvaSubDf = spark.read\
     .format("iceberg")\
     .option("start-snapshot-id", second_snapshot)\
     .option("end-snapshot-id", last_snapshot)\
-    .load("SPARK_CATALOG.DEFAULT.SVA_SUBSCRIPTION_BRONZE")
+    .load("SPARK_CATALOG.TELCO_MEDALLION.SVA_SUBSCRIPTION_BRONZE")
 
 # ICEBERG TABLE HISTORY (SHOWS EACH SNAPSHOT AND TIMESTAMP)
-spark.sql("SELECT * FROM SPARK_CATALOG.DEFAULT.INTEREST_BRONZE.history").show()
+spark.sql("SELECT * FROM SPARK_CATALOG.TELCO_MEDALLION.INTEREST_BRONZE.history").show()
 
 # ICEBERG TABLE SNAPSHOTS (USEFUL FOR INCREMENTAL QUERIES AND TIME TRAVEL)
-spark.sql("SELECT * FROM SPARK_CATALOG.DEFAULT.INTEREST_BRONZE.snapshots").show()
+spark.sql("SELECT * FROM SPARK_CATALOG.TELCO_MEDALLION.INTEREST_BRONZE.snapshots").show()
 
 # STORE FIRST AND LAST SNAPSHOT ID'S FROM SNAPSHOTS TABLE FOR INTEREST_BRONZE
-snapshots_df = spark.sql("SELECT * FROM SPARK_CATALOG.DEFAULT.INTEREST_BRONZE.snapshots;".format(username))
+snapshots_df = spark.sql("SELECT * FROM SPARK_CATALOG.TELCO_MEDALLION.INTEREST_BRONZE.snapshots;".format(username))
 
 last_snapshot = snapshots_df.select("snapshot_id").tail(1)[0][0]
 second_snapshot = snapshots_df.select("snapshot_id").collect()[0][0]
@@ -130,7 +129,7 @@ incReadInterestDf = spark.read\
     .format("iceberg")\
     .option("start-snapshot-id", second_snapshot)\
     .option("end-snapshot-id", last_snapshot)\
-    .load("SPARK_CATALOG.DEFAULT.INTEREST_BRONZE")
+    .load("SPARK_CATALOG.TELCO_MEDALLION.INTEREST_BRONZE")
 
 #---------------------------------------------------
 #               JOIN INCREMENTAL READS
@@ -171,7 +170,7 @@ assert geIncProductsDfValidation.success, \
 
 geIncFactsDf = SparkDFDataset(incFactsDf)
 
-geIncFactsDfValidation = geIncFactsDf.expect_column_max_to_be_between(column="NIVEL", min_value=0, max_value=100000)
+geIncFactsDfValidation = geIncFactsDf.expect_column_max_to_be_between(column="nrprotocolo", min_value=0, max_value=10000000)
 
 print(f"VALIDATION RESULTS FOR FACTS BATCH DATA:\n{geIncFactsDfValidation}\n")
 assert geIncFactsDfValidation.success, \
@@ -190,7 +189,7 @@ incFactsDf.createOrReplaceTempView("INCFACTS")
 ### CREATE SILVER LAYER TABLES FACT TABLE
 # Spark SQL Command:
 spark.sql("""
-CREATE TABLE IF NOT EXISTS SPARK_CATALOG.DEFAULT.PRODUCTS_SILVER (
+CREATE TABLE IF NOT EXISTS SPARK_CATALOG.TELCO_MEDALLION.PRODUCTS_SILVER (
   `nu_tlfn` STRING,
   `nu_doct` STRING,
   `user_id` STRING,
@@ -241,7 +240,7 @@ USING iceberg;
 """)
 
 spark.sql("""
-CREATE TABLE IF NOT EXISTS SPARK_CATALOG.DEFAULT.FACTS_SILVER (
+CREATE TABLE IF NOT EXISTS SPARK_CATALOG.TELCO_MEDALLION.FACTS_SILVER (
   `nu_tlfn` STRING,
   `nu_doct` STRING,
   `user_id` STRING,
@@ -275,10 +274,10 @@ USING iceberg;
 print("PRODUCTS SILVER")
 try:
     # CREATE TABLE BRANCH: PRODUCTS
-    spark.sql("ALTER TABLE SPARK_CATALOG.DEFAULT.PRODUCTS_SILVER CREATE BRANCH ingestion_branch")
+    spark.sql("ALTER TABLE SPARK_CATALOG.TELCO_MEDALLION.PRODUCTS_SILVER CREATE BRANCH ingestion_branch")
     print("PRODUCTS SILVER BRANCH CREATED")
     # MERGE OPERATION: PRODUCTS
-    spark.sql("""MERGE INTO SPARK_CATALOG.DEFAULT.PRODUCTS_SILVER.ingestion_branch t
+    spark.sql("""MERGE INTO SPARK_CATALOG.TELCO_MEDALLION.PRODUCTS_SILVER.ingestion_branch t
                     USING (SELECT * FROM INCPRODUCTS) s
                     ON t.productid = s.productid
                     WHEN MATCHED THEN UPDATE SET *
@@ -293,7 +292,7 @@ except Exception as e:
     print('\n')
 
     # MERGE OPERATION: PRODUCTS
-    spark.sql("""MERGE INTO SPARK_CATALOG.DEFAULT.PRODUCTS_SILVER t
+    spark.sql("""MERGE INTO SPARK_CATALOG.TELCO_MEDALLION.PRODUCTS_SILVER t
                     USING (SELECT * FROM INCPRODUCTS) s
                     ON t.productid = s.productid
                     WHEN MATCHED THEN UPDATE SET *
@@ -303,10 +302,10 @@ except Exception as e:
 print("FACTS SILVER")
 try:
     # CREATE TABLE BRANCH: PRODUCTS
-    spark.sql("ALTER TABLE SPARK_CATALOG.DEFAULT.FACTS_SILVER CREATE BRANCH ingestion_branch")
+    spark.sql("ALTER TABLE SPARK_CATALOG.TELCO_MEDALLION.FACTS_SILVER CREATE BRANCH ingestion_branch")
     print("PRODUCTS SILVER BRANCH CREATED")
     # MERGE OPERATION: PRODUCTS
-    spark.sql("""MERGE INTO SPARK_CATALOG.DEFAULT.FACTS_SILVER.ingestion_branch t
+    spark.sql("""MERGE INTO SPARK_CATALOG.TELCO_MEDALLION.FACTS_SILVER.ingestion_branch t
                     USING (SELECT * FROM INCFACTS) s
                     ON t.nu_tlfn = s.nu_tlfn
                     WHEN MATCHED THEN UPDATE SET *
@@ -320,7 +319,7 @@ except Exception as e:
     print("PERFORMING MERGE INTO TARGET TABLE INSTEAD")
     print('\n')
     # MERGE OPERATION: PRODUCTS
-    spark.sql("""MERGE INTO SPARK_CATALOG.DEFAULT.FACTS_SILVER t
+    spark.sql("""MERGE INTO SPARK_CATALOG.TELCO_MEDALLION.FACTS_SILVER t
                     USING (SELECT * FROM INCFACTS) s
                     ON t.nu_tlfn = s.nu_tlfn
                     WHEN MATCHED THEN UPDATE SET *
@@ -334,7 +333,7 @@ except Exception as e:
 # PRODUCTS SILVER
 
 ### PRE-MERGE COUNTS BY TRANSACTION TYPE:
-spark.sql("""SELECT COUNT(*) FROM SPARK_CATALOG.DEFAULT.PRODUCTS_SILVER""").show()
+spark.sql("""SELECT COUNT(*) FROM SPARK_CATALOG.TELCO_MEDALLION.PRODUCTS_SILVER""").show()
 
 ### MERGE INGESTION BRANCH INTO MAIN TABLE BRANCH
 
@@ -345,17 +344,19 @@ spark.sql("""SELECT COUNT(*) FROM SPARK_CATALOG.DEFAULT.PRODUCTS_SILVER""").show
 #we will use the cherrypick operation to commit the changes to the table which were staged in the 'ing_branch' branch up until now.
 
 # SHOW PAST BRANCH SNAPSHOT ID'S
-spark.sql("SELECT * FROM SPARK_CATALOG.DEFAULT.PRODUCTS_SILVER.refs;").show()
+spark.sql("SELECT * FROM SPARK_CATALOG.TELCO_MEDALLION.PRODUCTS_SILVER.refs;").show()
 
 try:
     # SAVE THE SNAPSHOT ID CORRESPONDING TO THE CREATED BRANCH
-    productsBranchSnapshotId = spark.sql("SELECT snapshot_id FROM SPARK_CATALOG.DEFAULT.PRODUCTS_SILVER.refs WHERE NAME == 'ingestion_branch';").collect()[0][0]
+    productsBranchSnapshotId = spark.sql("SELECT snapshot_id FROM SPARK_CATALOG.TELCO_MEDALLION.PRODUCTS_SILVER.refs WHERE NAME == 'ingestion_branch';").collect()[0][0]
     # USE THE PROCEDURE TO CHERRY-PICK THE SNAPSHOT
     # THIS IMPLICITLY SETS THE CURRENT TABLE STATE TO THE STATE DEFINED BY THE CHOSEN PRIOR SNAPSHOT ID
-    spark.sql("CALL spark_catalog.system.cherrypick_snapshot('SPARK_CATALOG.DEFAULT.PRODUCTS_SILVER',{})".format(productsBranchSnapshotId))
+    spark.sql("CALL spark_catalog.system.cherrypick_snapshot('SPARK_CATALOG.TELCO_MEDALLION.PRODUCTS_SILVER',{})".format(productsBranchSnapshotId))
     # VALIDATE THE CHANGES
     # THE TABLE ROW COUNT IN THE CURRENT TABLE STATE REFLECTS THE APPEND OPERATION - IT PREVIOSULY ONLY DID BY SELECTING THE BRANCH
-    spark.sql("SELECT COUNT(*) FROM SPARK_CATALOG.DEFAULT.PRODUCTS_SILVER;").show()
+    spark.sql("SELECT COUNT(*) FROM SPARK_CATALOG.TELCO_MEDALLION.PRODUCTS_SILVER;").show()
+    # DROP BRANCH
+    spark.sql("ALTER TABLE SPARK_CATALOG.TELCO_MEDALLION.FACTS_SILVER DROP BRANCH ingestion_branch")
 except Exception as e:
     print("PRODUCTS SILVER WAS EMPTY - BRANCH COULD NOT BE CREATED OR MERGED")
     print('\n')
@@ -366,20 +367,22 @@ except Exception as e:
 # FACTS SILVER
 
 ### PRE-MERGE COUNTS BY TRANSACTION TYPE:
-spark.sql("""SELECT COUNT(*) FROM SPARK_CATALOG.DEFAULT.FACTS_SILVER""").show()
+spark.sql("""SELECT COUNT(*) FROM SPARK_CATALOG.TELCO_MEDALLION.FACTS_SILVER""").show()
 
 # SHOW PAST BRANCH SNAPSHOT ID'S
-spark.sql("SELECT * FROM SPARK_CATALOG.DEFAULT.FACTS_SILVER.refs;").show()
+spark.sql("SELECT * FROM SPARK_CATALOG.TELCO_MEDALLION.FACTS_SILVER.refs;").show()
 
 try:
     # SAVE THE SNAPSHOT ID CORRESPONDING TO THE CREATED BRANCH
-    factsBranchSnapshotId = spark.sql("SELECT snapshot_id FROM SPARK_CATALOG.DEFAULT.FACTS_SILVER.refs WHERE NAME == 'ingestion_branch';").collect()[0][0]
+    factsBranchSnapshotId = spark.sql("SELECT snapshot_id FROM SPARK_CATALOG.TELCO_MEDALLION.FACTS_SILVER.refs WHERE NAME == 'ingestion_branch';").collect()[0][0]
     # USE THE PROCEDURE TO CHERRY-PICK THE SNAPSHOT
     # THIS IMPLICITLY SETS THE CURRENT TABLE STATE TO THE STATE DEFINED BY THE CHOSEN PRIOR SNAPSHOT ID
-    spark.sql("CALL spark_catalog.system.cherrypick_snapshot('SPARK_CATALOG.DEFAULT.FACTS_SILVER',{})".format(factsBranchSnapshotId))
+    spark.sql("CALL spark_catalog.system.cherrypick_snapshot('SPARK_CATALOG.TELCO_MEDALLION.FACTS_SILVER',{})".format(factsBranchSnapshotId))
     # VALIDATE THE CHANGES
     # THE TABLE ROW COUNT IN THE CURRENT TABLE STATE REFLECTS THE APPEND OPERATION - IT PREVIOSULY ONLY DID BY SELECTING THE BRANCH
-    spark.sql("SELECT COUNT(*) FROM SPARK_CATALOG.DEFAULT.FACTS_SILVER;").show()
+    spark.sql("SELECT COUNT(*) FROM SPARK_CATALOG.TELCO_MEDALLION.FACTS_SILVER;").show()
+    # DROP BRANCH
+    spark.sql("ALTER TABLE SPARK_CATALOG.TELCO_MEDALLION.FACTS_SILVER DROP BRANCH ingestion_branch")
 except Exception as e:
     print("FACTS SILVER WAS EMPTY - BRANCH COULD BE CREATED OR MERGED")
     print('\n')

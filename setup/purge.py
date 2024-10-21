@@ -86,7 +86,7 @@ def dropTable(spark, tbl):
 
     try:
         print("DROP TABLE PURGE: {}".format(tbl))
-        spark.sql("DROP TABLE IF EXISTS {} PURGE".format(tbl))
+        spark.sql("DROP TABLE IF EXISTS SPARK_CATALOG.TELCO_MEDALLION.{} PURGE".format(tbl))
     except Exception as e:
         print("DROP {} TABLE UNSUCCESSFUL".format(tbl))
         print('\n')
@@ -109,14 +109,14 @@ def main():
             username = "user" + str(i+1)
 
         print("PROCESSING USER {}...\n".format(username))
-        print("DROP TABLE INTEREST_BRONZE\n")
-        dropTable(spark, "SPARK_CATALOG.DEFAULT.INTEREST_BRONZE")
-        print("DROP TABLE ATENDIMENTO_BRONZE\n")
-        dropTable(spark, "SPARK_CATALOG.DEFAULT.ATENDIMENTO_BRONZE")
-        print("DROP TABLE PRODUCT_SUBSCRIPTION_BRONZE\n")
-        dropTable(spark, "SPARK_CATALOG.DEFAULT.PRODUCT_SUBSCRIPTION_BRONZE")
-        print("DROP TABLE SVA_SUBSCRIPTION_BRONZE\n")
-        dropTable(spark, "SPARK_CATALOG.DEFAULT.SVA_SUBSCRIPTION_BRONZE")
+        print("\nDROP TABLE ATENDIMENTO_BRONZE")
+        dropTable(spark, "ATENDIMENTO_BRONZE")
+        print("\nDROP TABLE PRODUCT_SUBSCRIPTION_BRONZE")
+        dropTable(spark, "PRODUCT_SUBSCRIPTION_BRONZE")
+        print("\nDROP TABLE SVA_SUBSCRIPTION_BRONZE")
+        dropTable(spark, "SVA_SUBSCRIPTION_BRONZE")
+        print("\nDROP TABLE INTEREST_BRONZE")
+        dropTable(spark, "INTEREST_BRONZE")
 
 if __name__ == "__main__":
     main()

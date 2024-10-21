@@ -270,10 +270,10 @@ def saveAtendimentoData(atendimentoDf, storageLocation, username):
 
 def saveAntennaData(antennaDf, storageLocation, username):
     """
-    Method to save Antenna Data to Cloud Storage in csv format
+    Method to save Antenna Data to Cloud Storage
     """
 
-    print("SAVING ANTENNA DF TO CSV IN CLOUD STORAGE...\n")
+    print("SAVING ANTENNA DF TO PARQUET IN CLOUD STORAGE...\n")
 
     try:
         antennaDf \
@@ -293,7 +293,7 @@ def saveProductSubscriptionData(productSubscriptionDf, storageLocation, username
     Method to save Product Subscription Data to Cloud Storage in csv format
     """
 
-    print("SAVING ANTENNA DF TO CSV IN CLOUD STORAGE...\n")
+    print("SAVING PRODUCT SUB DF TO PARQUET IN CLOUD STORAGE...\n")
 
     try:
         productSubscriptionDf \
@@ -310,10 +310,10 @@ def saveProductSubscriptionData(productSubscriptionDf, storageLocation, username
 
 def saveInterestData(interestDf, storageLocation, username):
     """
-    Method to save Antenna Data to Cloud Storage in parquet format
+    Method to save Interest Data to Cloud Storage in parquet format
     """
 
-    print("SAVING ANTENNA DF TO PARQUET IN CLOUD STORAGE...\n")
+    print("SAVING INTEREST DF TO PARQUET IN CLOUD STORAGE...\n")
 
     try:
         interestDf \
