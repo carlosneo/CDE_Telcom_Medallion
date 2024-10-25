@@ -88,7 +88,6 @@ cde job create --name mkt-hol-setup-$cde_user \
   --runtime-image-resource-name dex-spark-runtime-$cde_user \
   --arg $max_participants \
   --arg $cdp_data_lake_storage \
-  --arg "0" \
   --executor-cores 5 \
   --executor-memory "8g"
 cde job run \

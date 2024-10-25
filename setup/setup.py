@@ -54,14 +54,13 @@ def parseProperties():
         print("PARSING JOB ARGUMENTS...")
         maxParticipants = sys.argv[1]
         storageLocation = sys.argv[2]
-        batch_run_id = sys.argv[3]
     except Exception as e:
         print("READING JOB ARG UNSUCCESSFUL")
         print('\n')
         print(f'caught {type(e)}: e')
         print(e)
 
-    return maxParticipants, storageLocation, batch_run_id
+    return maxParticipants, storageLocation
 
 
 def createSparkSession():
@@ -351,8 +350,9 @@ def saveSvaSubData(svaSubDf, storageLocation, username):
 
 def main():
 
-    maxParticipants, storageLocation, batch_run_id = parseProperties()
-    print("Batch Run ID received from Airflow: {}".format(batch_run_id))
+    maxParticipants, storageLocation = parseProperties()
+    batch_run_id = datetime.now().hour+1
+    print("Batch Run ID: {}".format(batch_run_id))
 
     spark = createSparkSession()
 

@@ -136,7 +136,7 @@ class TelcoDataGen:
 
         fakerDataspec = (DataGenerator(self.spark, rows=data_rows, partitions=partitions_requested)
                     .withColumn("idatendimento", "int", minValue=62500*batch_run_id, maxValue=3000000000, uniqueValues=62500, step=1)
-                    .withColumn("msisdn", "string", minValue=62500*batch_run_id, maxValue=3000000000, uniqueValues=62500, step=1)
+                    .withColumn("msisdn", "string", minValue=1000000000*batch_run_id, maxValue=30000000000, uniqueValues=62500, step=1)
                     .withColumn("cpf", "string", minValue=1234, maxValue=923456234)
                     .withColumn("dtabertura", "timestamp", begin="1900-01-01 01:00:00",end="2023-12-31 23:59:00",interval="1 second", random=True)
                     .withColumn("dtprazofinalinterno", "timestamp", begin="1900-01-01 01:00:00",end="2023-12-31 23:59:00",interval="1 second", random=True)
@@ -196,10 +196,10 @@ class TelcoDataGen:
         self.spark.conf.set("spark.sql.shuffle.partitions", shuffle_partitions_requested)
 
         fakerDataspec = (DataGenerator(self.spark, rows=data_rows, partitions=partitions_requested)
-                    .withColumn("nu_tlfn", "string", minValue=83334*batch_run_id, maxValue=9234567890123, step=1, uniqueValues=83334)
+                    .withColumn("nu_tlfn", "string", minValue=1000000000*batch_run_id, maxValue=90000000000, step=1, uniqueValues=83334)
                     .withColumn("nu_doct", "string", minValue=891195, maxValue=14595999)
                     .withColumn("user_id", "string", minValue=90123, maxValue=92340123)
-                    .withColumn("id_prdt", "int", minValue=83334*batch_run_id, maxValue=923457890, step=1, uniqueValues=83334)
+                    .withColumn("id_prdt", "int", minValue=83334*batch_run_id, maxValue=92345007890, step=1, uniqueValues=83334)
                     .withColumn("dt_prmr_atcv_lnha", "timestamp", begin="1900-01-01 01:00:00",end="2023-12-31 23:59:00",interval="1 second", random=True)
                     .withColumn("dt_dstv_lnha", "timestamp", begin="1900-01-01 01:00:00",end="2023-12-31 23:59:00",interval="1 second", random=True)
                     .withColumn("ds_prdt", "string", minValue=12348905, maxValue=9345612399)
@@ -243,7 +243,7 @@ class TelcoDataGen:
         self.spark.conf.set("spark.sql.shuffle.partitions", shuffle_partitions_requested)
 
         fakerDataspec = (DataGenerator(self.spark, rows=data_rows, partitions=partitions_requested)
-                    .withColumn("msisdn", "string", minValue=batch_run_id*3750000, maxValue=180000000, uniqueValues=3750000, step=1) #text=FakerTextUS("credit_card_number")
+                    .withColumn("msisdn", "string", minValue=batch_run_id*1000000000, maxValue=90000000000, uniqueValues=3750000, step=1) #text=FakerTextUS("credit_card_number")
                     .withColumn("interesse", "string", minValue=12356, maxValue=9237901239)
                     .withColumn("nvl_interesse", "string", minValue=123823, maxValue=92345723)
                     )
@@ -267,7 +267,7 @@ class TelcoDataGen:
 
         fakerDataspec = (DataGenerator(self.spark, rows=data_rows, partitions=partitions_requested)
                     .withColumn("msisdn", "string", minValue=batch_run_id*41667, maxValue=9002341230, uniqueValues=41667, step=1)
-                    .withColumn("productid", "string", minValue=batch_run_id*41667, maxValue=923457890, uniqueValues=41667, step=1)
+                    .withColumn("productid", "string", minValue=83334*batch_run_id, maxValue=92345007890, uniqueValues=41667, step=1)
                     .withColumn("datacontratacao", "string", minValue=1, maxValue=92571231)
                     .withColumn("productname", "string", minValue=1, maxValue=92347031)
                     .withColumn("protocol_number", "string", minValue=1, maxValue=927989023)
