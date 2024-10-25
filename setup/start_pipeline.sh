@@ -19,11 +19,16 @@ echo "##########################################################"
 echo "CREATE SPARK FILES SHARED RESOURCE"
 cde resource upload --name Spark-Files-Shared \
     --local-path cde_spark_jobs/parameters.conf \
-    --local-path cde_spark_jobs/utils.py \
     --local-path cde_spark_jobs/001_Lakehouse_Bronze.py \
     --local-path cde_spark_jobs/002_Lakehouse_Silver.py \
     --local-path cde_spark_jobs/003_Lakehouse_Gold.py \
-    --local-path setup/purge.py \
+    --local-path setup/purge.py
+
+echo "UPLOAD DATAGEN SCRIPTS TO FILES RESOURCE"
+cde resource upload \
+    --name mkt-hol-setup-$cde_user \
+    --local-path setup/utils.py \
+    --local-path setup/setup.py
 
 echo "CREATE AIRFLOW FILES SHARED RESOURCE"
 cde resource create \
@@ -34,6 +39,8 @@ cde resource upload \
   --local-path cde_airflow_jobs/004_airflow_dag.py
 
 echo "CREATE & RUN PURGE TABLES JOB"
+cde job delete \
+  --name purge-tables
 cde job create \
   --type spark \
   --name purge-tables \
@@ -72,6 +79,8 @@ loading_icon_job "Purge Tables Job in Progress"
 
 echo "RERUN SETUP JOBS"
 echo "RECREATE & RUN MKTHOL SETUP JOB"
+cde job delete \
+  --name mkt-hol-setup-$cde_user
 cde job create --name mkt-hol-setup-$cde_user \
   --type spark \
   --mount-1-resource mkt-hol-setup-$cde_user \
@@ -79,6 +88,7 @@ cde job create --name mkt-hol-setup-$cde_user \
   --runtime-image-resource-name dex-spark-runtime-$cde_user \
   --arg $max_participants \
   --arg $cdp_data_lake_storage \
+  --arg "0" \
   --executor-cores 5 \
   --executor-memory "8g"
 cde job run \
@@ -182,7 +192,6 @@ cde job create \
 
 cde job delete \
   --name lakehouse_orchestration
-  
 cde job create \
   --name lakehouse_orchestration \
   --type airflow \

@@ -58,7 +58,9 @@ class TelcoDataGen:
     def __init__(self, spark):
         self.spark = spark
 
-    def invoicingDataGen(self, shuffle_partitions_requested = 20, partitions_requested = 20, data_rows = 35000000):
+    def invoicingDataGen(self, batch_run_id=0, shuffle_partitions_requested = 20, partitions_requested = 20, data_rows = 35000000):
+        batch_run_id = int(batch_run_id)
+        print("Min Value for MSISDN: {}".format(batch_run_id*35000000))
 
         # setup use of Faker
         FakerTextUS = FakerTextFactory(locale=['en_US'], providers=[bank])
@@ -67,7 +69,7 @@ class TelcoDataGen:
         self.spark.conf.set("spark.sql.shuffle.partitions", shuffle_partitions_requested)
 
         fakerDataspec = (DataGenerator(self.spark, rows=data_rows, partitions=partitions_requested)
-                    .withColumn("nu_doct", "string", minValue=74567891195, maxValue=14567891195999, uniqueValues=35000000, step=1)
+                    .withColumn("nu_doct", "string", minValue=35000000*batch_run_id, maxValue=16800000000, uniqueValues=35000000, step=1)
                     .withColumn("dt_ciclo_rcrg", "timestamp", begin="1900-01-01 01:00:00",end="2023-12-31 23:59:00",interval="1 second", random=True)
                     .withColumn("ds_prdt", "string", minValue=1234567891195999, maxValue=9234567891195999)
                     .withColumn("ds_plno", "string", minValue=74567891195, maxValue=14567891195999)
@@ -92,7 +94,9 @@ class TelcoDataGen:
 
         return df
 
-    def navigationDataGen(self, shuffle_partitions_requested = 200, partitions_requested = 2000, data_rows = 470000000000):
+    def navigationDataGen(self, batch_run_id=0, shuffle_partitions_requested = 200, partitions_requested = 2000, data_rows = 1000000000):
+        batch_run_id = int(batch_run_id)
+        print("Min Value for MSISDN: {}".format(batch_run_id*1000000000))
 
         # setup use of Faker
         FakerTextUS = FakerTextFactory(locale=['en_US'], providers=[bank])
@@ -101,7 +105,7 @@ class TelcoDataGen:
         self.spark.conf.set("spark.sql.shuffle.partitions", shuffle_partitions_requested)
 
         fakerDataspec = (DataGenerator(self.spark, rows=data_rows, partitions=partitions_requested)
-                    .withColumn("nu_tlfn", "string", minValue=1, maxValue=9234567890123, uniqueValues = 470000000000, step=1) #text=FakerTextUS("credit_card_number")
+                    .withColumn("nu_tlfn", "string", minValue=1000000000*batch_run_id, maxValue=480000000000, uniqueValues = 1000000000, step=1) #text=FakerTextUS("credit_card_number")
                     .withColumn("ds_ip", "string", minValue=12345678123, maxValue=9234567890123)
                     .withColumn("cd_imei", "string", minValue=1234567012345, maxValue=9234567890125)
                     .withColumn("cd_cgi", "string", minValue=123456734567890, maxValue=9934567890123456)
@@ -118,7 +122,11 @@ class TelcoDataGen:
 
         return df
 
-    def atendimentoDataGen(self, shuffle_partitions_requested = 5, partitions_requested = 5, data_rows = 62500):
+# create a ml model based on navigation data, microsegmentation of companies, model could deliver geolocalization in real time for clients.
+
+    def atendimentoDataGen(self, batch_run_id=0, shuffle_partitions_requested = 5, partitions_requested = 5, data_rows = 62500):
+        batch_run_id = int(batch_run_id)
+        print("Min Value for MSISDN: {}".format(batch_run_id*62500))
 
         # setup use of Faker
         FakerTextUS = FakerTextFactory(locale=['en_US'], providers=[bank])
@@ -127,8 +135,8 @@ class TelcoDataGen:
         self.spark.conf.set("spark.sql.shuffle.partitions", shuffle_partitions_requested)
 
         fakerDataspec = (DataGenerator(self.spark, rows=data_rows, partitions=partitions_requested)
-                    .withColumn("idatendimento", "int", minValue=1, maxValue=625010, step=1)
-                    .withColumn("msisdn", "string", minValue=1, maxValue=9002341230, step=1)
+                    .withColumn("idatendimento", "int", minValue=62500*batch_run_id, maxValue=3000000000, uniqueValues=62500, step=1)
+                    .withColumn("msisdn", "string", minValue=62500*batch_run_id, maxValue=3000000000, uniqueValues=62500, step=1)
                     .withColumn("cpf", "string", minValue=1234, maxValue=923456234)
                     .withColumn("dtabertura", "timestamp", begin="1900-01-01 01:00:00",end="2023-12-31 23:59:00",interval="1 second", random=True)
                     .withColumn("dtprazofinalinterno", "timestamp", begin="1900-01-01 01:00:00",end="2023-12-31 23:59:00",interval="1 second", random=True)
@@ -148,7 +156,9 @@ class TelcoDataGen:
 
         return df
 
-    def antennaDataGen(self, shuffle_partitions_requested = 200, partitions_requested = 500, data_rows = 13000000000):
+    def antennaDataGen(self, batch_run_id=0, shuffle_partitions_requested = 200, partitions_requested = 500, data_rows = 541666666):
+        batch_run_id = int(batch_run_id)
+        print("Min Value for MSISDN: {}".format(batch_run_id*541666666))
 
         # setup use of Faker
         FakerTextUS = FakerTextFactory(locale=['en_US'], providers=[bank])
@@ -157,13 +167,13 @@ class TelcoDataGen:
         self.spark.conf.set("spark.sql.shuffle.partitions", shuffle_partitions_requested)
 
         fakerDataspec = (DataGenerator(self.spark, rows=data_rows, partitions=partitions_requested)
-                    .withColumn("msisdn", "string", minValue=1, maxValue=9002341230, step=1)
+                    .withColumn("msisdn", "string", minValue=541666666*batch_run_id, maxValue=25999999968, uniqueValues=541666666, step=1)
                     .withColumn("tx_uplink", "int", minValue=1, maxValue=300000, random=True)
                     .withColumn("rx_downlink", "int", minValue=1, maxValue=300000, random=True)
-                    .withColumn("qt_volume", "int", minValue=1, maxValue=300000, random=True)
+                    .withColumn("qt_volume", "int", minValue=1, maxValue=300000, random=True) #--quantity of data (bytes) processed
                     .withColumn("dt_start_time", "timestamp", begin="1900-01-01 01:00:00",end="2023-12-31 23:59:00",interval="1 second", random=True)
                     .withColumn("dt_end_time", "timestamp", begin="1900-01-01 01:00:00",end="2023-12-31 23:59:00",interval="1 second", random=True)
-                    .withColumn("qt_duration", "int", minValue=1, maxValue=300000, random=True)
+                    .withColumn("qt_duration", "int", minValue=1, maxValue=300000, random=True) #--duration of the session
                     .withColumn("nu_served_imei", "string", minValue=12345, maxValue=9234512399)
                     .withColumn("cd_cgi", "string", minValue=123890891, maxValue=99999867891)
                     .withColumn("cd_pais", "string", minValue=11, maxValue=99)
@@ -175,7 +185,9 @@ class TelcoDataGen:
 
         return df
 
-    def productSubscriptionDataGen(self, shuffle_partitions_requested = 10, partitions_requested = 10, data_rows = 83334):
+    def productSubscriptionDataGen(self, batch_run_id=0, shuffle_partitions_requested = 10, partitions_requested = 10, data_rows = 83334):
+        batch_run_id = int(batch_run_id)
+        print("Min Value for NU_TLFN: {}".format(batch_run_id*83334))
 
         # setup use of Faker
         FakerTextUS = FakerTextFactory(locale=['en_US'], providers=[bank])
@@ -184,10 +196,10 @@ class TelcoDataGen:
         self.spark.conf.set("spark.sql.shuffle.partitions", shuffle_partitions_requested)
 
         fakerDataspec = (DataGenerator(self.spark, rows=data_rows, partitions=partitions_requested)
-                    .withColumn("nu_tlfn", "string", minValue=1, maxValue=9234567890123, step=1, uniqueValues=83334)
+                    .withColumn("nu_tlfn", "string", minValue=83334*batch_run_id, maxValue=9234567890123, step=1, uniqueValues=83334)
                     .withColumn("nu_doct", "string", minValue=891195, maxValue=14595999)
                     .withColumn("user_id", "string", minValue=90123, maxValue=92340123)
-                    .withColumn("id_prdt", "int", minValue=1, maxValue=923457890, step=1)
+                    .withColumn("id_prdt", "int", minValue=83334*batch_run_id, maxValue=923457890, step=1, uniqueValues=83334)
                     .withColumn("dt_prmr_atcv_lnha", "timestamp", begin="1900-01-01 01:00:00",end="2023-12-31 23:59:00",interval="1 second", random=True)
                     .withColumn("dt_dstv_lnha", "timestamp", begin="1900-01-01 01:00:00",end="2023-12-31 23:59:00",interval="1 second", random=True)
                     .withColumn("ds_prdt", "string", minValue=12348905, maxValue=9345612399)
@@ -220,7 +232,9 @@ class TelcoDataGen:
 
         return df
 
-    def interestDataGen(self, shuffle_partitions_requested = 20, partitions_requested = 20, data_rows = 3750000):
+    def interestDataGen(self, batch_run_id=0, shuffle_partitions_requested = 20, partitions_requested = 20, data_rows = 3750000):
+        batch_run_id = int(batch_run_id)
+        print("Min Value for MSISDN: {}".format(batch_run_id*3750000))
 
         # setup use of Faker
         FakerTextUS = FakerTextFactory(locale=['en_US'], providers=[bank])
@@ -229,7 +243,7 @@ class TelcoDataGen:
         self.spark.conf.set("spark.sql.shuffle.partitions", shuffle_partitions_requested)
 
         fakerDataspec = (DataGenerator(self.spark, rows=data_rows, partitions=partitions_requested)
-                    .withColumn("msisdn", "string", minValue=1, maxValue=9002341230, step=1) #text=FakerTextUS("credit_card_number")
+                    .withColumn("msisdn", "string", minValue=batch_run_id*3750000, maxValue=180000000, uniqueValues=3750000, step=1) #text=FakerTextUS("credit_card_number")
                     .withColumn("interesse", "string", minValue=12356, maxValue=9237901239)
                     .withColumn("nvl_interesse", "string", minValue=123823, maxValue=92345723)
                     )
@@ -240,7 +254,10 @@ class TelcoDataGen:
 
         return df
 
-    def svaSubscriptionDataGen(self, shuffle_partitions_requested = 5, partitions_requested = 5, data_rows = 41667):
+    def svaSubscriptionDataGen(self, batch_run_id=0, shuffle_partitions_requested = 5, partitions_requested = 5, data_rows = 41667):
+        batch_run_id = int(batch_run_id)
+        print("Min Value for MSISDN: {}".format(batch_run_id*41667))
+        print("Min Value for Product ID: {}".format(batch_run_id*41667))
 
         # setup use of Faker
         FakerTextUS = FakerTextFactory(locale=['en_US'], providers=[bank])
@@ -249,8 +266,8 @@ class TelcoDataGen:
         self.spark.conf.set("spark.sql.shuffle.partitions", shuffle_partitions_requested)
 
         fakerDataspec = (DataGenerator(self.spark, rows=data_rows, partitions=partitions_requested)
-                    .withColumn("msisdn", "string", minValue=1, maxValue=9002341230, step=1)
-                    .withColumn("productid", "string", minValue=1, maxValue=923457890, step=1)
+                    .withColumn("msisdn", "string", minValue=batch_run_id*41667, maxValue=9002341230, uniqueValues=41667, step=1)
+                    .withColumn("productid", "string", minValue=batch_run_id*41667, maxValue=923457890, uniqueValues=41667, step=1)
                     .withColumn("datacontratacao", "string", minValue=1, maxValue=92571231)
                     .withColumn("productname", "string", minValue=1, maxValue=92347031)
                     .withColumn("protocol_number", "string", minValue=1, maxValue=927989023)
@@ -261,7 +278,7 @@ class TelcoDataGen:
                     .withColumn("servicetype", "string", minValue=1, maxValue=9234901231)
                     .withColumn("tplinha", "string", minValue=1, maxValue=9238901231)
                     .withColumn("grossvalue", "int", minValue=1, maxValue=99999999)
-                    .withColumn("company", "int", minValue=1, maxValue=99999999)
+                    .withColumn("company", "int", minValue=1, maxValue=10)
                     .withColumn("taxpis", "decimal", minValue=0.01, maxValue=30000, random=True)
                     .withColumn("taxcofins", "decimal", minValue=0.01, maxValue=30000, random=True)
                     .withColumn("taxiss", "decimal", minValue=0.01, maxValue=30000, random=True)

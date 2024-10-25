@@ -25,38 +25,6 @@ echo "CREATE FILE RESOURCE"
 cde resource delete --name mkt-hol-setup-$cde_user
 cde resource create --name mkt-hol-setup-$cde_user --type files
 cde resource upload --name mkt-hol-setup-$cde_user --local-path setup/utils.py --local-path setup/setup.py
-echo "CREATE AND RUN SETUP JOB"
-cde job create --name mkt-hol-setup-$cde_user --type spark \
-  --mount-1-resource mkt-hol-setup-$cde_user --application-file setup.py \
-  --runtime-image-resource-name dex-spark-runtime-$cde_user \
-  --arg $max_participants --arg $cdp_data_lake_storage \
-  --executor-cores 5 --executor-memory "8g"
-cde job run --name mkt-hol-setup-$cde_user
-
-function loading_icon_job() {
-  local loading_animation=( '—' "\\" '|' '/' )
-
-  echo "${1} "
-
-  tput civis
-  trap "tput cnorm" EXIT
-
-  while true; do
-    job_status=$(cde run list --filter 'job[like]%mkt-hol-setup-'$cde_user | jq -r '[last] | .[].status')
-    if [[ $job_status == "succeeded" ]]; then
-      echo "Setup Job Execution Completed"
-      break
-    else
-      for frame in "${loading_animation[@]}" ; do
-        printf "%s\b" "${frame}"
-        sleep 1
-      done
-    fi
-  done
-  printf " \b\n"
-}
-
-loading_icon_job "Setup Job in Progress"
 
 echo "CREATE SPARK FILES SHARED RESOURCE"
 cde resource delete --name Spark-Files-Shared

@@ -55,6 +55,7 @@ dag_name = "lakehouse-orch-"+username
 logger = logging.getLogger(__name__)
 
 print("Using DAG Name: {}".format(dag_name))
+print("Batch Run ID: {}".format(datetime.now().hour+1))
 
 default_args = {
     'owner': username,
@@ -81,7 +82,8 @@ datagen = CDEJobRunOperator(
         job_name='mkt-hol-setup-'+username, #Must match name of CDE Spark Job in the CDE Jobs UI
         trigger_rule='all_success',
         variables={'maxParticipants':'1',
-                    'storageLocation':'abfs://data@telefonicabrstor661f42a0.dfs.core.windows.net'}
+                    'storageLocation':'abfs://data@telefonicabrstor661f42a0.dfs.core.windows.net',
+                    'batch_run_id':str(datetime.now().hour+1)}
         )
 
 bronze = CDEJobRunOperator(

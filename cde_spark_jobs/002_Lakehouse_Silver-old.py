@@ -171,8 +171,7 @@ incFactsDf = incReadSvaSubDf.join(incReadProdSubDf, incReadSvaSubDf.productid ==
 
 columns = ["nu_tlfn", "nu_doct", "user_id", "dt_prmr_atcv_lnha", "dt_dstv_lnha", "ds_prdt", \
             "ds_plno", "uf", "no_lgrd", "no_imovel", "no_brro", "msisdn", \
-            "productid", "productname", "servicetype", "idatendimento", \
-            "cpf", "dtabertura", "qtinsistencia", \
+            "productid", "productname", "servicetype", "idatendimento", "cpf", "dtabertura", "qtinsistencia", \
             "nivel", "nrprotocolo", "interesse"]
 
 incFactsDf = incFactsDf.select(*columns)
@@ -298,19 +297,58 @@ USING iceberg;
 #               CREATE SILVER LAYER BRANCHES
 #---------------------------------------------------
 
-print("PRODUCTS SILVER MERGE INTO")
-spark.sql("""MERGE INTO SPARK_CATALOG.TELCO_MEDALLION.PRODUCTS_SILVER t
-                USING (SELECT * FROM INCPRODUCTS) s
-                ON t.productid = s.productid
-                WHEN MATCHED THEN UPDATE SET *
-                WHEN NOT MATCHED THEN INSERT *""")
+print("PRODUCTS SILVER")
+try:
+    # CREATE TABLE BRANCH: PRODUCTS
+    spark.sql("ALTER TABLE SPARK_CATALOG.TELCO_MEDALLION.PRODUCTS_SILVER CREATE BRANCH ingestion_branch")
+    print("PRODUCTS SILVER BRANCH CREATED")
+    # MERGE OPERATION: PRODUCTS
+    spark.sql("""MERGE INTO SPARK_CATALOG.TELCO_MEDALLION.PRODUCTS_SILVER.ingestion_branch t
+                    USING (SELECT * FROM INCPRODUCTS) s
+                    ON t.productid = s.productid
+                    WHEN MATCHED THEN UPDATE SET *
+                    WHEN NOT MATCHED THEN INSERT *""")
+    print("MERGE INTO TARGET TABLE BRANCH COMPLETED")
+except Exception as e:
+    print("PRODUCTS SILVER IS EMPTY - BRANCH CANNOT BE CREATED")
+    print('\n')
+    print(f'caught {type(e)}: e')
+    print(e)
+    print("PERFORMING MERGE INTO TARGET TABLE INSTEAD")
+    print('\n')
 
-print("FACTS SILVER MERGE INTO")
-spark.sql("""MERGE INTO SPARK_CATALOG.TELCO_MEDALLION.FACTS_SILVER t
-                USING (SELECT * FROM INCFACTS) s
-                ON t.nu_tlfn = s.nu_tlfn
-                WHEN MATCHED THEN UPDATE SET *
-                WHEN NOT MATCHED THEN INSERT *""")
+    # MERGE OPERATION: PRODUCTS
+    spark.sql("""MERGE INTO SPARK_CATALOG.TELCO_MEDALLION.PRODUCTS_SILVER t
+                    USING (SELECT * FROM INCPRODUCTS) s
+                    ON t.productid = s.productid
+                    WHEN MATCHED THEN UPDATE SET *
+                    WHEN NOT MATCHED THEN INSERT *""")
+
+print("FACTS SILVER")
+try:
+    # CREATE TABLE BRANCH: PRODUCTS
+    spark.sql("ALTER TABLE SPARK_CATALOG.TELCO_MEDALLION.FACTS_SILVER CREATE BRANCH ingestion_branch")
+    print("PRODUCTS SILVER BRANCH CREATED")
+    # MERGE OPERATION: PRODUCTS
+    spark.sql("""MERGE INTO SPARK_CATALOG.TELCO_MEDALLION.FACTS_SILVER.ingestion_branch t
+                    USING (SELECT * FROM INCFACTS) s
+                    ON t.nu_tlfn = s.nu_tlfn
+                    WHEN MATCHED THEN UPDATE SET *
+                    WHEN NOT MATCHED THEN INSERT *""")
+    print("MERGE INTO TARGET TABLE BRANCH COMPLETED")
+except Exception as e:
+    print("PRODUCTS SILVER IS EMPTY - BRANCH CANNOT BE CREATED")
+    print('\n')
+    print(f'caught {type(e)}: e')
+    print(e)
+    print("PERFORMING MERGE INTO TARGET TABLE INSTEAD")
+    print('\n')
+    # MERGE OPERATION: PRODUCTS
+    spark.sql("""MERGE INTO SPARK_CATALOG.TELCO_MEDALLION.FACTS_SILVER t
+                    USING (SELECT * FROM INCFACTS) s
+                    ON t.nu_tlfn = s.nu_tlfn
+                    WHEN MATCHED THEN UPDATE SET *
+                    WHEN NOT MATCHED THEN INSERT *""")
 
 #---------------------------------------------------
 #               MERGE TRANSACTIONS WITH HIST
@@ -318,14 +356,60 @@ spark.sql("""MERGE INTO SPARK_CATALOG.TELCO_MEDALLION.FACTS_SILVER t
 
 # PRODUCTS SILVER
 
-### POST-MERGE COUNTS FOR PRODUCTS SILVER:
+### PRE-MERGE COUNTS BY TRANSACTION TYPE:
 spark.sql("""SELECT COUNT(*) FROM SPARK_CATALOG.TELCO_MEDALLION.PRODUCTS_SILVER""").show()
 
-### POST-MERGE COUNTS FOR PRODUCTS SILVER:
-spark.sql("""SELECT COUNT(*) FROM SPARK_CATALOG.TELCO_MEDALLION.FACTS_SILVER""").show()
+### MERGE INGESTION BRANCH INTO MAIN TABLE BRANCH
 
 #The cherrypick_snapshot procedure creates a new snapshot incorporating the changes from another snapshot in a metadata-only operation
 #(no new datafiles are created). To run the cherrypick_snapshot procedure you need to provide two parameters:
 #the name of the table you’re updating as well as the ID of the snapshot the table should be updated based on.
 #This transaction will return the snapshot IDs before and after the cherry-pick operation as source_snapshot_id and current_snapshot_id.
 #we will use the cherrypick operation to commit the changes to the table which were staged in the 'ing_branch' branch up until now.
+
+# SHOW PAST BRANCH SNAPSHOT ID'S
+spark.sql("SELECT * FROM SPARK_CATALOG.TELCO_MEDALLION.PRODUCTS_SILVER.refs;").show()
+
+try:
+    print("MERGE PRODUCTS SILVER BRANCH IF EXISTS\n")
+    # SAVE THE SNAPSHOT ID CORRESPONDING TO THE CREATED BRANCH
+    productsBranchSnapshotId = spark.sql("SELECT snapshot_id FROM SPARK_CATALOG.TELCO_MEDALLION.PRODUCTS_SILVER.refs WHERE NAME == 'ingestion_branch';").collect()[0][0]
+    # USE THE PROCEDURE TO CHERRY-PICK THE SNAPSHOT
+    # THIS IMPLICITLY SETS THE CURRENT TABLE STATE TO THE STATE DEFINED BY THE CHOSEN PRIOR SNAPSHOT ID
+    spark.sql("CALL spark_catalog.system.cherrypick_snapshot('SPARK_CATALOG.TELCO_MEDALLION.PRODUCTS_SILVER',{})".format(productsBranchSnapshotId))
+    # VALIDATE THE CHANGES
+    # THE TABLE ROW COUNT IN THE CURRENT TABLE STATE REFLECTS THE APPEND OPERATION - IT PREVIOSULY ONLY DID BY SELECTING THE BRANCH
+    spark.sql("SELECT COUNT(*) FROM SPARK_CATALOG.TELCO_MEDALLION.PRODUCTS_SILVER;").show()
+    # DROP BRANCH
+    spark.sql("ALTER TABLE SPARK_CATALOG.TELCO_MEDALLION.FACTS_SILVER DROP BRANCH ingestion_branch")
+except Exception as e:
+    print("PRODUCTS SILVER WAS EMPTY - BRANCH COULD NOT BE CREATED OR MERGED")
+    print('\n')
+    print(f'caught {type(e)}: e')
+    print(e)
+
+# FACTS SILVER
+
+### PRE-MERGE COUNTS BY TRANSACTION TYPE:
+spark.sql("""SELECT COUNT(*) FROM SPARK_CATALOG.TELCO_MEDALLION.FACTS_SILVER""").show()
+
+# SHOW PAST BRANCH SNAPSHOT ID'S
+spark.sql("SELECT * FROM SPARK_CATALOG.TELCO_MEDALLION.FACTS_SILVER.refs;").show()
+
+try:
+    print("MERGE FACTS SILVER BRANCH IF EXISTS\n")
+    # SAVE THE SNAPSHOT ID CORRESPONDING TO THE CREATED BRANCH
+    factsBranchSnapshotId = spark.sql("SELECT snapshot_id FROM SPARK_CATALOG.TELCO_MEDALLION.FACTS_SILVER.refs WHERE NAME == 'ingestion_branch';").collect()[0][0]
+    # USE THE PROCEDURE TO CHERRY-PICK THE SNAPSHOT
+    # THIS IMPLICITLY SETS THE CURRENT TABLE STATE TO THE STATE DEFINED BY THE CHOSEN PRIOR SNAPSHOT ID
+    spark.sql("CALL spark_catalog.system.cherrypick_snapshot('SPARK_CATALOG.TELCO_MEDALLION.FACTS_SILVER',{})".format(factsBranchSnapshotId))
+    # VALIDATE THE CHANGES
+    # THE TABLE ROW COUNT IN THE CURRENT TABLE STATE REFLECTS THE APPEND OPERATION - IT PREVIOSULY ONLY DID BY SELECTING THE BRANCH
+    spark.sql("SELECT COUNT(*) FROM SPARK_CATALOG.TELCO_MEDALLION.FACTS_SILVER;").show()
+    # DROP BRANCH
+    spark.sql("ALTER TABLE SPARK_CATALOG.TELCO_MEDALLION.FACTS_SILVER DROP BRANCH ingestion_branch")
+except Exception as e:
+    print("FACTS SILVER WAS EMPTY - BRANCH COULD NOT BE CREATED OR MERGED")
+    print('\n')
+    print(f'caught {type(e)}: e')
+    print(e)

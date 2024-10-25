@@ -66,22 +66,27 @@ INTEREST = '{0}/telco/demo/{1}/interest'.format(storageLocation, username)
 PRODUCT_SUBSCRIPTION = '{0}/telco/demo/{1}/productsubscription'.format(storageLocation, username)
 SVA_SUBSCRIPTION = '{0}/telco/demo/{1}/svasub'.format(storageLocation, username)
 ATENDIMENTO = '{0}/telco/demo/{1}/atendimento'.format(storageLocation, username)
+NAVIGATION = "{0}/telco/demo/{1}/navigation".format(storageLocation, username)
 
-### LOAD INTEREST FROM CLOUD STORAGE
+### LOAD INTEREST DATA FROM CLOUD STORAGE
 interestDf = spark.read.parquet(INTEREST)
 interestDf.printSchema()
 
-### LOAD PRODUCT SUBSCRIPTION FROM CLOUD STORAGE
+### LOAD PRODUCT DATA SUBSCRIPTION FROM CLOUD STORAGE
 productSubscriptionDf = spark.read.parquet(PRODUCT_SUBSCRIPTION)
 productSubscriptionDf.printSchema()
 
-### LOAD INTEREST FROM CLOUD STORAGE
+### LOAD INTEREST DATA FROM CLOUD STORAGE
 svaSubDf = spark.read.parquet(SVA_SUBSCRIPTION)
 svaSubDf.printSchema()
 
-### LOAD INTEREST FROM CLOUD STORAGE
+### LOAD INTEREST DATA FROM CLOUD STORAGE
 atendimentoDf = spark.read.parquet(ATENDIMENTO)
 atendimentoDf.printSchema()
+
+### LOAD ANTENNA DATA FROM CLOUD STORAGE
+navigationDf = spark.read.parquet(NAVIGATION)
+navigationDf.printSchema()
 
 ### RENAME MULTIPLE COLUMNS
 #cols = [col for col in transactionsDf.columns if col.startswith("transaction")]
@@ -96,6 +101,21 @@ atendimentoDf.printSchema()
 ## CREATE BRONZE DB & TABLES IF NOT EXISTS
 print("CREATE TELCO DB: TELCO_MEDALLION")
 spark.sql("CREATE DATABASE IF NOT EXISTS TELCO_MEDALLION")
+
+"""print("REMOVE PRIOR TABLE BRANCHES IF THEY EXIST")
+try:
+    spark.sql("ALTER TABLE SPARK_CATALOG.TELCO_MEDALLION.PRODUCTS_SILVER DROP BRANCH ingestion_branch")
+    print("REMOVE INGESTION BRANCH FROM PRODUCTS_SILVER SUCCESSFUL")
+except:
+    print("REMOVE INGESTION BRANCH FROM PRODUCTS_SILVER UNSUCCESSFUL")
+    pass
+
+try:
+    spark.sql("ALTER TABLE SPARK_CATALOG.TELCO_MEDALLION.FACTS_SILVER DROP BRANCH ingestion_branch")
+    print("REMOVE INGESTION BRANCH FROM FACTS_SILVER SUCCESSFUL")
+except:
+    print("REMOVE INGESTION BRANCH FROM FACTS_SILVER UNSUCCESSFUL")
+    pass"""
 
 print("ATENDIMENTO BRONZE")
 try:
@@ -177,6 +197,27 @@ except Exception as e:
     print("PERFORMING APPEND TO INTEREST BRONZE INSTEAD")
     print('\n')
     interestDf.writeTo("SPARK_CATALOG.TELCO_MEDALLION.INTEREST_BRONZE"). \
+        tableProperty("write.format.default", "parquet"). \
+        tableProperty("write.spark.fanout.enabled", "true"). \
+        using("iceberg"). \
+        append()
+    print(e)
+
+print("NAVIGATION BRONZE")
+try:
+    navigationDf.writeTo("SPARK_CATALOG.TELCO_MEDALLION.NAVIGATION_BRONZE"). \
+        tableProperty("write.format.default", "parquet"). \
+        tableProperty("write.spark.fanout.enabled", "true"). \
+        using("iceberg"). \
+        create()
+    print("CREATED NAVIGATION BRONZE")
+except Exception as e:
+    print("NAVIGATION BRONZE ALREADY EXISTS")
+    print('\n')
+    print(f'caught {type(e)}: e')
+    print("PERFORMING APPEND TO NAVIGATION BRONZE INSTEAD")
+    print('\n')
+    navigationDf.writeTo("SPARK_CATALOG.TELCO_MEDALLION.NAVIGATION_BRONZE"). \
         tableProperty("write.format.default", "parquet"). \
         tableProperty("write.spark.fanout.enabled", "true"). \
         using("iceberg"). \

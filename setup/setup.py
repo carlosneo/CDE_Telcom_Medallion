@@ -54,13 +54,14 @@ def parseProperties():
         print("PARSING JOB ARGUMENTS...")
         maxParticipants = sys.argv[1]
         storageLocation = sys.argv[2]
+        batch_run_id = sys.argv[3]
     except Exception as e:
         print("READING JOB ARG UNSUCCESSFUL")
         print('\n')
         print(f'caught {type(e)}: e')
         print(e)
 
-    return maxParticipants, storageLocation
+    return maxParticipants, storageLocation, batch_run_id
 
 
 def createSparkSession():
@@ -82,7 +83,7 @@ def createSparkSession():
     return spark
 
 
-def createInvoicingData(spark):
+def createInvoicingData(spark, batch_run_id):
     """
     Method to create Invoicing dataframe using the dbldatagen and Faker frameworks
     """
@@ -90,7 +91,7 @@ def createInvoicingData(spark):
     try:
         print("CREATING DF...\n")
         dg = TelcoDataGen(spark)
-        invoiceDf = dg.invoicingDataGen()
+        invoiceDf = dg.invoicingDataGen(batch_run_id=batch_run_id)
     except Exception as e:
         print("CREATING DATA UNSUCCESSFUL")
         print('\n')
@@ -100,7 +101,7 @@ def createInvoicingData(spark):
     return invoiceDf
 
 
-def createNavigationData(spark):
+def createNavigationData(spark, batch_run_id):
     """
     Method to create Navigation dataframe using the dbldatagen and Faker frameworks
     """
@@ -108,7 +109,7 @@ def createNavigationData(spark):
     try:
         print("CREATING DF...\n")
         dg = TelcoDataGen(spark)
-        navigationDf = dg.navigationDataGen()
+        navigationDf = dg.navigationDataGen(batch_run_id=batch_run_id)
     except Exception as e:
         print("CREATING DATA UNSUCCESSFUL")
         print('\n')
@@ -118,7 +119,7 @@ def createNavigationData(spark):
     return navigationDf
 
 
-def createAtendimentoData(spark):
+def createAtendimentoData(spark, batch_run_id):
     """
     Method to create Atendimento dataframe using the dbldatagen and Faker frameworks
     """
@@ -126,7 +127,7 @@ def createAtendimentoData(spark):
     try:
         print("CREATING ATENDIMENTO DF...\n")
         dg = TelcoDataGen(spark)
-        atendimentoDf = dg.atendimentoDataGen()
+        atendimentoDf = dg.atendimentoDataGen(batch_run_id=batch_run_id)
     except Exception as e:
         print("CREATING ATENDIMENTO DATA UNSUCCESSFUL")
         print('\n')
@@ -136,7 +137,7 @@ def createAtendimentoData(spark):
     return atendimentoDf
 
 
-def createAntennaData(spark):
+def createAntennaData(spark, batch_run_id):
     """
     Method to create Atendimento dataframe using the dbldatagen and Faker frameworks
     """
@@ -144,7 +145,7 @@ def createAntennaData(spark):
     try:
         print("CREATING DF...\n")
         dg = TelcoDataGen(spark)
-        antennaDf = dg.antennaDataGen()
+        antennaDf = dg.antennaDataGen(batch_run_id=batch_run_id)
     except Exception as e:
         print("CREATING DATA UNSUCCESSFUL")
         print('\n')
@@ -154,7 +155,7 @@ def createAntennaData(spark):
     return antennaDf
 
 
-def createProductSubscriptionData(spark):
+def createProductSubscriptionData(spark, batch_run_id):
     """
     Method to create ProductSubscription dataframe using the dbldatagen and Faker frameworks
     """
@@ -162,7 +163,7 @@ def createProductSubscriptionData(spark):
     try:
         print("CREATING DF...\n")
         dg = TelcoDataGen(spark)
-        productSubscriptionDf = dg.productSubscriptionDataGen()
+        productSubscriptionDf = dg.productSubscriptionDataGen(batch_run_id)
     except Exception as e:
         print("CREATING DATA UNSUCCESSFUL")
         print('\n')
@@ -172,7 +173,7 @@ def createProductSubscriptionData(spark):
     return productSubscriptionDf
 
 
-def createInterestData(spark):
+def createInterestData(spark, batch_run_id):
     """
     Method to create interest dataframe using the dbldatagen and Faker frameworks
     """
@@ -180,7 +181,7 @@ def createInterestData(spark):
     try:
         print("CREATING DF...\n")
         dg = TelcoDataGen(spark)
-        interestDf = dg.interestDataGen()
+        interestDf = dg.interestDataGen(batch_run_id=batch_run_id)
     except Exception as e:
         print("CREATING DATA UNSUCCESSFUL")
         print('\n')
@@ -190,7 +191,7 @@ def createInterestData(spark):
     return interestDf
 
 
-def createSvaSubscriptionData(spark):
+def createSvaSubscriptionData(spark, batch_run_id):
     """
     Method to create svaSubscription dataframe using the dbldatagen and Faker frameworks
     """
@@ -198,7 +199,7 @@ def createSvaSubscriptionData(spark):
     try:
         print("CREATING DF...\n")
         dg = TelcoDataGen(spark)
-        svaSubDf = dg.svaSubscriptionDataGen()
+        svaSubDf = dg.svaSubscriptionDataGen(batch_run_id=batch_run_id)
     except Exception as e:
         print("CREATING DATA UNSUCCESSFUL")
         print('\n')
@@ -350,7 +351,8 @@ def saveSvaSubData(svaSubDf, storageLocation, username):
 
 def main():
 
-    maxParticipants, storageLocation = parseProperties()
+    maxParticipants, storageLocation, batch_run_id = parseProperties()
+    print("Batch Run ID received from Airflow: {}".format(batch_run_id))
 
     spark = createSparkSession()
 
@@ -364,26 +366,27 @@ def main():
 
         print("PROCESSING USER {}...\n".format(username))
 
-        #invoiceDf = createInvoicingData(spark)
+        #invoiceDf = createInvoicingData(spark, batch_run_id)
         #saveInvoiceData(invoiceDf, storageLocation, username)
 
-        #navigationDf = createNavigationData(spark)
-        #saveNavigationData(navigationDf, storageLocation, username)
+        navigationDf = createNavigationData(spark, batch_run_id)
+        saveNavigationData(navigationDf, storageLocation, username)
 
-        atendimentoDf = createAtendimentoData(spark)
+        atendimentoDf = createAtendimentoData(spark, batch_run_id)
         saveAtendimentoData(atendimentoDf, storageLocation, username)
 
-        #antennaDf = createAntennaData(spark)
+        #antennaDf = createAntennaData(spark, batch_run_id)
         #saveAntennaData(antennaDf, storageLocation, username)
 
-        productSubscriptionDf = createProductSubscriptionData(spark)
+        productSubscriptionDf = createProductSubscriptionData(spark, batch_run_id)
         saveProductSubscriptionData(productSubscriptionDf, storageLocation, username)
 
-        interestDf = createInterestData(spark)
+        interestDf = createInterestData(spark, batch_run_id)
         saveInterestData(interestDf, storageLocation, username)
 
-        svaSubDf = createSvaSubscriptionData(spark)
+        svaSubDf = createSvaSubscriptionData(spark, batch_run_id)
         saveSvaSubData(svaSubDf, storageLocation, username)
+
 
 if __name__ == "__main__":
     main()
