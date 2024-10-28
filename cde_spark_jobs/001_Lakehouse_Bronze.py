@@ -106,8 +106,6 @@ print("ATENDIMENTO BRONZE")
 try:
     atendimentoDf.writeTo("SPARK_CATALOG.TELCO_MEDALLION.ATENDIMENTO_BRONZE"). \
         tableProperty("write.format.default", "parquet"). \
-        tableProperty("write.spark.fanout.enabled", "true"). \
-        partitionedBy(F.months("dtprazofinalanatel")). \
         using("iceberg"). \
         create()
     print("CREATED ATENDIMENTO BRONZE")
@@ -119,8 +117,6 @@ except Exception as e:
     print('\n')
     atendimentoDf.writeTo("SPARK_CATALOG.TELCO_MEDALLION.ATENDIMENTO_BRONZE"). \
         tableProperty("write.format.default", "parquet"). \
-        tableProperty("write.spark.fanout.enabled", "true"). \
-        partitionedBy(F.months("dtprazofinalanatel")). \
         using("iceberg"). \
         append()
     print(e)
