@@ -62,46 +62,6 @@ class TelcoDataGen:
     def invoicingDataGen(self, shuffle_partitions_requested = 20, partitions_requested = 20, data_rows = 35000):
 
         # setup use of Faker
-        fake = Faker()
-
-        # Define a function to generate random plan descriptions
-        def generate_plan_description():
-            plans = [
-                "Plano Basico", 
-                "Plano Premium", 
-                "Plano Corporativo", 
-                "Plano Familia", 
-                "Plano Ilimitado", 
-                "Plano de Dados", 
-                "Plano de Voz", 
-                "Plano 3G"
-                "Plano 4G", 
-                "Plano 5G", 
-                "Plano Especial",
-                "Plano Fixo",
-                "Plano Movel",
-                "Plano Empresarial", 
-                "Plano 100GB", 
-                "Plano 500GB"
-            ]
-            return fake.random_element(plans)
-        
-        def generate_ds_prdt():
-            g_prdt_contratado = [
-                "Pre", 
-                "Pos"
-            ]
-            return fake.random_element(g_prdt_contratado)
-        
-        def generate_no_lgrd():
-            no_lgrd = [
-                "Avenida", 
-                "Rua",
-                "Alameda"
-            ]
-            return fake.random_element(no_lgrd)
-
-        # setup use of Faker
         FakerTextUS = FakerTextFactory(locale=['en_US'], providers=[bank])
 
         # partition parameters etc.
