@@ -44,11 +44,13 @@ from datetime import datetime
 import dbldatagen as dg
 import dbldatagen.distributions as dist
 from dbldatagen import FakerTextFactory, DataGenerator, fakerText
+from faker.providers import bank, credit_card, currency
 from pyspark.sql.types import LongType, FloatType, IntegerType, StringType, \
                               DoubleType, BooleanType, ShortType, \
                               TimestampType, DateType, DecimalType, \
                               ByteType, BinaryType, ArrayType, MapType, \
                               StructType, StructField
+
 
 class TelcoDataGen:
 
