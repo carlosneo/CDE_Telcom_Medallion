@@ -379,9 +379,6 @@ def main():
         productSubscriptionDf = createProductSubscriptionData(spark)
         saveProductSubscriptionData(productSubscriptionDf, storageLocation, username)
 
-        interestDf = createInterestData(spark)
-        saveInterestData(interestDf, storageLocation, username)
-
         svaSubDf = createSvaSubscriptionData(spark)
         saveSvaSubData(svaSubDf, storageLocation, username)
 
