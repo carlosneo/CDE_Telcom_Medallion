@@ -43,9 +43,7 @@ import pandas as pd
 from datetime import datetime
 import dbldatagen as dg
 import dbldatagen.distributions as dist
-from dbldatagen import FakerTextFactory, DataGenerator, fakerText
-from faker.providers import bank, credit_card, currency
-from faker import Faker
+from dbldatagen import FakerTextFactory, DataGenerator, fakerText 
 from pyspark.sql.types import LongType, FloatType, IntegerType, StringType, \
                               DoubleType, BooleanType, ShortType, \
                               TimestampType, DateType, DecimalType, \
@@ -61,20 +59,17 @@ class TelcoDataGen:
 
     def invoicingDataGen(self, shuffle_partitions_requested = 20, partitions_requested = 20, data_rows = 35000):
 
-        # setup use of Faker
-        FakerTextUS = FakerTextFactory(locale=['en_US'], providers=[bank])
-
         # partition parameters etc.
         self.spark.conf.set("spark.sql.shuffle.partitions", shuffle_partitions_requested)
 
         fakerDataspec = (DataGenerator(self.spark, rows=data_rows, partitions=partitions_requested)
                     .withColumn("nu_doct", "string", minValue=74567891195, maxValue=14567891195999, uniqueValues=35000000, step=1)
                     .withColumn("dt_ciclo_rcrg", "timestamp", begin="2019-01-01 01:00:00",end="2023-12-31 23:59:00",interval="1 second", random=True)
-                    .withColumn("ds_prdt", "string", value=generate_ds_prdt)
-                    .withColumn("ds_plno", "string", value=generate_plan_description)
+                    .withColumn("ds_prdt", "string", minValue=74567891195, maxValue=14567891195999)
+                    .withColumn("ds_plno", "string", minValue=74567891195, maxValue=14567891195999)
                     .withColumn("cd_ddd", "int", minValue=1, maxValue=99, random=True)
                     .withColumn("uf", "string", minValue=1, maxValue=99)
-                    .withColumn("no_lgrd", "string", value=generate_no_lgrd)
+                    .withColumn("no_lgrd", "string", minValue=74567891195, maxValue=14567891195999)
                     .withColumn("no_imovel", "string", minValue=12345667890, maxValue=92345667890, random=True)
                     .withColumn("no_brro", "string", minValue=74567891195, maxValue=14567891195999)
                     .withColumn("nu_cep", "string", minValue=1123456789098765432, maxValue=9923456789098765432)
